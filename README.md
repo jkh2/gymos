@@ -68,7 +68,7 @@ The mic indicator sits in the lower left of the camera view. It pulses green whe
 
 ## Current build status
 
-### Done — v3
+### Done — v4
 
 - [x] Schema-driven exercise engine — exercises defined as JSON config objects, not hardcoded logic
 - [x] Landmark alias map — human-readable joint names (`left_elbow`) resolve to MediaPipe indices internally
@@ -86,6 +86,10 @@ The mic indicator sits in the lower left of the camera view. It pulses green whe
 - [x] Progression logic — session summary calculates next session weight based on whether rep target was hit
 - [x] Session summary screen — total reps, avg asymmetry, failure alerts, next weight
 - [x] Single HTML file — deployable to GitHub Pages with no build step
+- [x] Cadence tone engine — Web Audio API tones through earbuds guiding concentric, hold, and eccentric phases
+- [x] Cadence schema per exercise — tempo configurable (concentric secs, hold secs, eccentric secs, tone frequencies)
+- [x] Cadence phase indicator — HUD shows CURL / HOLD / LOWER in sync with tones
+- [x] Cadence resets cleanly between sets and on session end
 
 **Exercise library:** Dumbbell Curl (bilateral elbow flexion)
 
@@ -93,7 +97,7 @@ The mic indicator sits in the lower left of the camera view. It pulses green whe
 
 ## Roadmap to completion
 
-### Phase 3 — QR + URL parameter loading
+### Phase 3 — QR + URL parameter loading ← next
 Each machine gets a QR code that encodes the exercise and program parameters as URL query strings:
 ```
 gymos.app/?exercise=lat-pulldown&weight=120&reps=10&sets=4
@@ -188,11 +192,10 @@ This is intentional. A gym is a place people go to focus. The last thing the app
 
 ## Built by
 
-James Keith Harwood II & Claude Sentinel
+James Keith Harwood II
 Sentinel AI Systems — Antonito, Colorado
 [jameskeithharwood.com](https://www.jameskeithharwood.com)
-
-
+Built for Mike Simone based on his original concept
 ---
 
 ## License
