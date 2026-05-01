@@ -14,11 +14,8 @@
     --text2: #888;
     --text3: #444;
     --green: #1DB954;
-    --green-dim: rgba(29,185,84,0.15);
     --amber: #F5A623;
-    --amber-dim: rgba(245,166,35,0.12);
     --red: #E53935;
-    --red-dim: rgba(229,57,53,0.12);
     --blue: #4A9EFF;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,10 +40,28 @@
   #rep-label { font-size: 11px; letter-spacing: 0.2em; color: rgba(255,255,255,0.35); margin-top: 4px; }
 
   /* ALERTS */
-  #form-alert { position: absolute; bottom: 270px; left: 16px; right: 16px; border-radius: 10px; padding: 10px 14px; font-size: 13px; z-index: 10; text-align: center; display: none; transition: opacity 0.3s; }
-  #form-alert.asym { background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.4); color: var(--amber); display: block; }
-  #form-alert.failure { background: rgba(229,57,53,0.15); border: 1px solid rgba(229,57,53,0.4); color: var(--red); display: block; }
-  #form-alert.hidden { display: none; }
+  #form-alert { position: absolute; bottom: 270px; left: 16px; right: 16px; border-radius: 10px; padding: 10px 14px; font-size: 13px; z-index: 10; text-align: center; display: none; }
+  #form-alert.asym    { background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.4); color: var(--amber); display: block; }
+  #form-alert.failure { background: rgba(229,57,53,0.15);  border: 1px solid rgba(229,57,53,0.4);  color: var(--red);   display: block; }
+  #form-alert.hidden  { display: none; }
+
+  /* VELOCITY BADGE */
+  #velocity-badge { position: absolute; bottom: 210px; right: 16px; font-size: 10px; letter-spacing: 0.08em; color: var(--text3); z-index: 10; }
+
+  /* VOICE HUD */
+  #voice-hud { position: absolute; bottom: 210px; left: 16px; z-index: 10; display: none; flex-direction: column; align-items: flex-start; gap: 6px; }
+  #voice-hud.active { display: flex; }
+  #voice-status { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); display: flex; align-items: center; gap: 6px; }
+  #voice-status .mic-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  #voice-status.listening .mic-dot { background: var(--green); animation: blink 0.8s infinite; }
+  #voice-status.listening #voice-status-label { color: var(--text3); }
+  #voice-status.heard    .mic-dot { background: var(--amber); }
+  #voice-status.heard    #voice-status-label { color: var(--amber); }
+  #voice-status-label { font-size: 10px; letter-spacing: 0.1em; }
+  #voice-transcript { font-size: 12px; color: var(--text2); background: rgba(0,0,0,0.6); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; max-width: 180px; display: none; }
+  #voice-transcript.visible { display: block; }
+  #voice-confirm { font-size: 12px; color: var(--green); background: rgba(0,0,0,0.6); border: 1px solid rgba(29,185,84,0.3); border-radius: 8px; padding: 4px 10px; display: none; }
+  #voice-confirm.visible { display: block; }
 
   /* BOTTOM PANEL */
   #panel { background: var(--surface); border-top: 1px solid var(--border); padding: 16px; z-index: 10; flex-shrink: 0; }
@@ -72,7 +87,7 @@
   .metric-val { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
   .metric-val.green { color: var(--green); }
   .metric-val.amber { color: var(--amber); }
-  .metric-val.red { color: var(--red); }
+  .metric-val.red   { color: var(--red);   }
   .metric-lbl { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); margin-top: 3px; }
 
   /* CONTROLS */
@@ -87,14 +102,12 @@
   #start-screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; z-index: 100; text-align: center; }
   #start-screen h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; margin-bottom: 6px; }
   #start-screen .tagline { font-size: 12px; color: var(--text3); letter-spacing: 0.1em; margin-bottom: 8px; }
-  #start-screen .exercise-tag { font-size: 11px; letter-spacing: 0.12em; color: var(--green); border: 1px solid rgba(29,185,84,0.3); border-radius: 100px; padding: 4px 14px; margin-bottom: 28px; display: inline-block; }
-
+  .exercise-tag { font-size: 11px; letter-spacing: 0.12em; color: var(--green); border: 1px solid rgba(29,185,84,0.3); border-radius: 100px; padding: 4px 14px; margin-bottom: 28px; display: inline-block; }
   .setup-row { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
   .setup-row label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; }
   .setup-row .val-ctrl { display: flex; align-items: center; gap: 14px; }
   .setup-row .num { font-size: 20px; font-weight: 700; min-width: 36px; text-align: center; }
   .ctrl-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
   #start-btn { width: 100%; margin-top: 8px; padding: 16px; background: var(--green); color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: inherit; letter-spacing: 0.06em; cursor: pointer; }
 
   /* REST SCREEN */
@@ -115,24 +128,21 @@
   .done-stat-val { font-size: 16px; font-weight: 700; }
   .done-stat-val.amber { color: var(--amber); }
   .done-stat-val.green { color: var(--green); }
-  .done-stat-val.red { color: var(--red); }
-
-  /* VELOCITY BADGE */
-  #velocity-badge { position: absolute; bottom: 210px; right: 16px; font-size: 10px; letter-spacing: 0.08em; color: var(--text3); z-index: 10; }
+  .done-stat-val.red   { color: var(--red);   }
 
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-  @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  @keyframes pop   { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
   .pop { animation: pop 0.18s ease-out; }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- START SCREEN -->
+  <!-- ═══ START SCREEN ═══ -->
   <div id="start-screen">
     <h1>GymOS</h1>
     <div class="tagline">STOP COUNTING. START LIFTING.</div>
-    <div class="exercise-tag" id="exercise-tag">DUMBBELL CURL · BILATERAL</div>
+    <div class="exercise-tag">DUMBBELL CURL · BILATERAL</div>
 
     <div class="setup-row">
       <label>SETS</label>
@@ -170,7 +180,7 @@
     <button id="start-btn" onclick="startSession()">START SESSION</button>
   </div>
 
-  <!-- CAMERA VIEW -->
+  <!-- ═══ CAMERA VIEW ═══ -->
   <div id="camera-wrap">
     <video id="video" autoplay playsinline muted></video>
     <canvas id="overlay"></canvas>
@@ -188,9 +198,18 @@
     </div>
 
     <div id="velocity-badge"></div>
+
+    <div id="voice-hud">
+      <div id="voice-status" class="listening">
+        <span class="mic-dot"></span>
+        <span id="voice-status-label">LISTENING</span>
+      </div>
+      <div id="voice-transcript"></div>
+      <div id="voice-confirm"></div>
+    </div>
   </div>
 
-  <!-- BOTTOM PANEL -->
+  <!-- ═══ BOTTOM PANEL ═══ -->
   <div id="panel">
     <div id="phase-wrap">
       <div id="phase-label">
@@ -229,12 +248,12 @@
     </div>
 
     <div id="controls">
-      <button class="btn danger" onclick="endSet()">END SET</button>
+      <button class="btn danger"  onclick="endSet()">END SET</button>
       <button class="btn primary" onclick="endSet()">SET DONE</button>
     </div>
   </div>
 
-  <!-- REST SCREEN -->
+  <!-- ═══ REST SCREEN ═══ -->
   <div id="rest-screen">
     <div id="rest-timer">60</div>
     <div id="rest-lbl">REST</div>
@@ -242,27 +261,29 @@
     <button id="skip-rest" onclick="startNextSet()">SKIP REST</button>
   </div>
 
-  <!-- DONE SCREEN -->
+  <!-- ═══ DONE SCREEN ═══ -->
   <div id="done-screen">
     <h2>Session Complete</h2>
     <div class="done-sub" id="done-sub-label"></div>
-    <div class="done-stat"><span class="done-stat-label">TOTAL REPS</span><span class="done-stat-val" id="done-total-reps">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">TOTAL REPS</span><span class="done-stat-val"       id="done-total-reps">–</span></div>
     <div class="done-stat"><span class="done-stat-label">AVG ASYMMETRY</span><span class="done-stat-val amber" id="done-asym">–</span></div>
-    <div class="done-stat"><span class="done-stat-label">WEIGHT</span><span class="done-stat-val" id="done-weight">–</span></div>
-    <div class="done-stat"><span class="done-stat-label">FAILURE ALERTS</span><span class="done-stat-val" id="done-failure">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">WEIGHT</span><span class="done-stat-val"            id="done-weight">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">FAILURE ALERTS</span><span class="done-stat-val"   id="done-failure">–</span></div>
     <div class="done-stat"><span class="done-stat-label">NEXT SESSION</span><span class="done-stat-val green" id="done-next">–</span></div>
     <button id="start-btn" style="margin-top:24px;width:100%" onclick="resetApp()">NEW SESSION</button>
   </div>
 
-</div>
+</div><!-- #app -->
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 
 <script>
+'use strict';
+
 // ═══════════════════════════════════════════════════════════════
-// LANDMARK MAP — MediaPipe indices by name
+// LANDMARK MAP
 // ═══════════════════════════════════════════════════════════════
 const LANDMARKS = {
   left_shoulder:  11,
@@ -297,7 +318,7 @@ const EXERCISES = {
       landmarks: {
         left:  { proximal: 'left_shoulder',  joint: 'left_elbow',  distal: 'left_wrist'  },
         right: { proximal: 'right_shoulder', joint: 'right_elbow', distal: 'right_wrist' },
-      }
+      },
     },
 
     rep: {
@@ -333,7 +354,6 @@ const EXERCISES = {
 
     voice: {
       start_cue: 'Curl.',
-      form_prefix: '',
     },
   },
 };
@@ -353,51 +373,44 @@ function adj(key, delta) {
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
-let S = {
-  running: false,
-  currentSet: 1,
-  repCount: 0,
-  totalReps: 0,
-  repState: 'down',       // 'down' | 'up'
+function freshState() {
+  return {
+    running: false,
+    currentSet: 1,
+    repCount: 0,
+    totalReps: 0,
+    repState: 'down',
+    leftAngle: 0,
+    rightAngle: 0,
+    leftPeakHistory: [],
+    rightPeakHistory: [],
+    leftPeakThisRep: 999,
+    rightPeakThisRep: 999,
+    asymHistory: [],
+    lagCount: 0,
+    repTimestamps: [],
+    baselineVelocity: null,
+    failureAlerts: 0,
+    formCooldowns: {},
+    restInterval: null,
+    mediapipeReady: false,
+  };
+}
 
-  // angles this frame
-  leftAngle: 0,
-  rightAngle: 0,
-
-  // peak tracking per rep
-  leftPeakHistory: [],
-  rightPeakHistory: [],
-  leftPeakThisRep: 999,
-  rightPeakThisRep: 999,
-
-  // asymmetry
-  asymHistory: [],
-  lagCount: 0,
-
-  // velocity failure
-  repTimestamps: [],      // ms timestamps when rep was at top
-  baselineVelocity: null, // ms, avg of first 3 reps
-  failureAlerts: 0,
-
-  // form rule cooldowns
-  formCooldowns: {},
-
-  restInterval: null,
-  mediapipeReady: false,
-};
+let S = freshState();
 
 // ═══════════════════════════════════════════════════════════════
-// SPEECH ENGINE
+// SPEECH — OUTPUT
 // ═══════════════════════════════════════════════════════════════
 const synth = window.speechSynthesis;
 let speakCooldownUntil = 0;
 let lastSpoken = '';
 
-function speak(text, force = false) {
+function speak(text, force) {
   if (!synth) return;
   const now = Date.now();
   if (!force && now < speakCooldownUntil) return;
-  if (text === lastSpoken && !force) return;
+  if (!force && text === lastSpoken) return;
   synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 1.1; u.pitch = 0.9; u.volume = 1.0;
@@ -422,7 +435,7 @@ function angleBetween(a, b, c) {
   const ab = { x: a.x - b.x, y: a.y - b.y };
   const cb = { x: c.x - b.x, y: c.y - b.y };
   const dot = ab.x * cb.x + ab.y * cb.y;
-  const mag = Math.sqrt((ab.x**2 + ab.y**2)) * Math.sqrt((cb.x**2 + cb.y**2));
+  const mag = Math.sqrt(ab.x**2 + ab.y**2) * Math.sqrt(cb.x**2 + cb.y**2);
   if (mag === 0) return 0;
   return Math.round(Math.acos(Math.max(-1, Math.min(1, dot / mag))) * (180 / Math.PI));
 }
@@ -437,16 +450,15 @@ function getLandmark(landmarks, name) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// EXERCISE ENGINE — driven by schema
+// EXERCISE ENGINE
 // ═══════════════════════════════════════════════════════════════
 function processFrame(landmarks) {
-  if (!S.running) return;
+  if (!S.running) return null;
 
   const ex = exercise;
-  const t = ex.tracking;
-
-  // Resolve joint angles for each side
+  const t  = ex.tracking;
   const sides = {};
+
   for (const side of ['left', 'right']) {
     const def = t.landmarks[side];
     if (
@@ -460,31 +472,28 @@ function processFrame(landmarks) {
           getLandmark(landmarks, def.joint),
           getLandmark(landmarks, def.distal)
         ),
-        jointLM: getLandmark(landmarks, def.joint),
       };
     }
   }
 
-  if (!sides.left || !sides.right) return;
+  if (!sides.left || !sides.right) return null;
 
   const lAngle = sides.left.angle;
   const rAngle = sides.right.angle;
-  S.leftAngle = lAngle;
+  S.leftAngle  = lAngle;
   S.rightAngle = rAngle;
 
-  // Track peak (minimum angle = maximum flexion) per rep
-  S.leftPeakThisRep = Math.min(S.leftPeakThisRep, lAngle);
+  S.leftPeakThisRep  = Math.min(S.leftPeakThisRep,  lAngle);
   S.rightPeakThisRep = Math.min(S.rightPeakThisRep, rAngle);
 
-  // Phase bar — map avg angle to progress
-  const rep = ex.rep;
+  const rep      = ex.rep;
   const avgAngle = (lAngle + rAngle) / 2;
   const progress = Math.max(0, Math.min(100,
     ((rep.bottom_angle - avgAngle) / (rep.bottom_angle - rep.top_angle)) * 100
   ));
 
   updatePhaseBar(progress, avgAngle);
-  detectRep(lAngle, rAngle, progress, rep);
+  detectRep(lAngle, rAngle, rep);
   evaluateFormRules(ex, lAngle, rAngle);
 
   return { lAngle, rAngle };
@@ -506,15 +515,15 @@ function updatePhaseBar(progress, avgAngle) {
   }
 }
 
-function detectRep(lAngle, rAngle, progress, repCfg) {
-  const atTop    = lAngle < repCfg.top_angle + repCfg.top_tolerance &&
-                   rAngle < repCfg.top_angle + repCfg.top_tolerance;
+function detectRep(lAngle, rAngle, repCfg) {
+  const atTop    = lAngle < repCfg.top_angle    + repCfg.top_tolerance &&
+                   rAngle < repCfg.top_angle    + repCfg.top_tolerance;
   const atBottom = lAngle > repCfg.bottom_angle - repCfg.bottom_tolerance &&
                    rAngle > repCfg.bottom_angle - repCfg.bottom_tolerance;
 
   if (S.repState === 'down' && atTop) {
     S.repState = 'up';
-    S.repTimestamps.push(Date.now()); // record when we hit top
+    S.repTimestamps.push(Date.now());
   } else if (S.repState === 'up' && atBottom) {
     S.repState = 'down';
     completeRep();
@@ -522,13 +531,11 @@ function detectRep(lAngle, rAngle, progress, repCfg) {
 }
 
 function completeRep() {
-  // Record peak angles for this rep
   S.leftPeakHistory.push(S.leftPeakThisRep);
   S.rightPeakHistory.push(S.rightPeakThisRep);
-  S.leftPeakThisRep = 999;
+  S.leftPeakThisRep  = 999;
   S.rightPeakThisRep = 999;
 
-  // Check velocity failure
   checkVelocityFailure();
 
   S.repCount++;
@@ -544,8 +551,8 @@ function completeRep() {
   speakRep(S.repCount);
 
   if (S.repCount >= cfg.reps) {
-    setTimeout(() => speak('Set complete.', true), 700);
-    setTimeout(() => endSet(), 1400);
+    setTimeout(function() { speak('Set complete.', true); }, 700);
+    setTimeout(endSet, 1400);
   }
 }
 
@@ -553,25 +560,23 @@ function checkVelocityFailure() {
   const ts = S.repTimestamps;
   if (ts.length < 2) return;
 
-  // Rep duration = time between consecutive tops
   const durations = [];
   for (let i = 1; i < ts.length; i++) {
     durations.push(ts[i] - ts[i - 1]);
   }
 
-  // Establish baseline from first 3 reps
   if (durations.length === 3) {
     S.baselineVelocity = (durations[0] + durations[1] + durations[2]) / 3;
   }
 
   if (!S.baselineVelocity) return;
 
-  const latest = durations[durations.length - 1];
+  const latest   = durations[durations.length - 1];
   const threshold = exercise.rep.velocity_failure_threshold_pct / 100;
-  const slowdown = (latest - S.baselineVelocity) / S.baselineVelocity;
+  const slowdown  = (latest - S.baselineVelocity) / S.baselineVelocity;
 
-  const badge = document.getElementById('velocity-badge');
-  badge.textContent = Math.round(latest / 100) / 10 + 's/rep';
+  document.getElementById('velocity-badge').textContent =
+    (Math.round(latest / 100) / 10) + 's/rep';
 
   if (slowdown > threshold) {
     S.failureAlerts++;
@@ -580,44 +585,34 @@ function checkVelocityFailure() {
   }
 }
 
-// ─── FORM RULES ENGINE ────────────────────────────────────────────────────────
+// ─── FORM RULES ENGINE ────────────────────────────────────────
 function evaluateFormRules(ex, lAngle, rAngle) {
   const now = Date.now();
-
   for (const rule of ex.form_rules) {
-    const cooldownKey = rule.id;
-    if (S.formCooldowns[cooldownKey] && now < S.formCooldowns[cooldownKey]) continue;
-
-    if (rule.type === 'bilateral_peak_diff') {
-      evaluateBilateralDiff(rule, now);
-    } else if (rule.type === 'angle_floor') {
-      evaluateAngleFloor(rule, lAngle, rAngle, now);
-    }
+    if (S.formCooldowns[rule.id] && now < S.formCooldowns[rule.id]) continue;
+    if (rule.type === 'bilateral_peak_diff') evaluateBilateralDiff(rule, now);
+    else if (rule.type === 'angle_floor')   evaluateAngleFloor(rule, lAngle, rAngle, now);
   }
 }
 
 function evaluateBilateralDiff(rule, now) {
   if (S.leftPeakHistory.length === 0) return;
 
-  // Use recent peak history (last 3 reps)
-  const recent = 3;
-  const lRecent = S.leftPeakHistory.slice(-recent);
-  const rRecent = S.rightPeakHistory.slice(-recent);
-  const lPeak = Math.min(...lRecent); // min angle = max flexion
-  const rPeak = Math.min(...rRecent);
+  const lRecent = S.leftPeakHistory.slice(-3);
+  const rRecent = S.rightPeakHistory.slice(-3);
+  const lPeak   = Math.min.apply(null, lRecent);
+  const rPeak   = Math.min.apply(null, rRecent);
 
-  // Convert to flexion percentage (lower angle = more flex)
-  const lFlex = Math.max(0, exercise.rep.bottom_angle - lPeak);
-  const rFlex = Math.max(0, exercise.rep.bottom_angle - rPeak);
+  const lFlex   = Math.max(0, exercise.rep.bottom_angle - lPeak);
+  const rFlex   = Math.max(0, exercise.rep.bottom_angle - rPeak);
   const maxFlex = Math.max(lFlex, rFlex, 1);
 
-  const lPct = Math.round((lFlex / maxFlex) * 100);
-  const rPct = Math.round((rFlex / maxFlex) * 100);
-  const diff = Math.abs(lPct - rPct);
+  const lPct    = Math.round((lFlex / maxFlex) * 100);
+  const rPct    = Math.round((rFlex / maxFlex) * 100);
+  const diff    = Math.abs(lPct - rPct);
   const lagging = lPct < rPct ? 'left' : (rPct < lPct ? 'right' : null);
 
   updateAsymUI(lPct, rPct, diff, lagging);
-
   S.asymHistory.push(diff);
 
   if (diff > rule.threshold_pct && lagging) {
@@ -632,23 +627,21 @@ function evaluateBilateralDiff(rule, now) {
 }
 
 function evaluateAngleFloor(rule, lAngle, rAngle, now) {
-  if (S.repState !== 'down') return; // only check at bottom
-  const bothAngles = [lAngle, rAngle];
-  const failing = bothAngles.some(a => a < rule.min_angle);
-  if (failing) {
+  if (S.repState !== 'down') return;
+  if (lAngle < rule.min_angle || rAngle < rule.min_angle) {
     showFormAlert(rule.cue, 'asym');
     speak(rule.cue);
     S.formCooldowns[rule.id] = now + 5000;
   }
 }
 
-// ─── ALERT UI ─────────────────────────────────────────────────────────────────
+// ─── ALERT UI ─────────────────────────────────────────────────
 let alertClearTimer = null;
 
 function showFormAlert(msg, type) {
   const el = document.getElementById('form-alert');
   el.textContent = msg;
-  el.className = type;
+  el.className   = type;
   clearTimeout(alertClearTimer);
   alertClearTimer = setTimeout(clearFormAlert, 3500);
 }
@@ -658,17 +651,174 @@ function clearFormAlert() {
 }
 
 function updateAsymUI(lPct, rPct, diff, lagging) {
-  document.getElementById('bar-left').style.width = lPct + '%';
+  document.getElementById('bar-left').style.width  = lPct + '%';
   document.getElementById('bar-right').style.width = rPct + '%';
-  document.getElementById('pct-left').textContent = lPct + '%';
+  document.getElementById('pct-left').textContent  = lPct + '%';
   document.getElementById('pct-right').textContent = rPct + '%';
+  document.getElementById('bar-left').className    = 'asym-bar' + (lagging === 'left'  ? ' lag' : '');
+  document.getElementById('bar-right').className   = 'asym-bar' + (lagging === 'right' ? ' lag' : '');
 
-  document.getElementById('bar-left').className = 'asym-bar' + (lagging === 'left' ? ' lag' : '');
-  document.getElementById('bar-right').className = 'asym-bar' + (lagging === 'right' ? ' lag' : '');
-
-  const asymEl = document.getElementById('m-asym');
+  const asymEl      = document.getElementById('m-asym');
   asymEl.textContent = diff + '%';
-  asymEl.className = diff > 15 ? 'metric-val amber' : (diff < 5 ? 'metric-val green' : 'metric-val');
+  asymEl.className   = diff > 15 ? 'metric-val amber' : (diff < 5 ? 'metric-val green' : 'metric-val');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VOICE COMMAND ENGINE
+// ═══════════════════════════════════════════════════════════════
+const VOICE_COMMANDS = [
+  {
+    phrases: ['next set','set done','done','end set','finish set','set complete'],
+    confirm: 'Ending set.',
+    action:  function() { endSet(); },
+    context: ['lifting'],
+  },
+  {
+    phrases: ['skip rest','go','next','skip'],
+    confirm: 'Skipping rest.',
+    action:  function() { startNextSet(); },
+    context: ['resting'],
+  },
+  {
+    phrases: ['pause','stop'],
+    confirm: 'Paused.',
+    action:  function() { S.running = false; voiceContext = 'paused'; document.getElementById('phase-name').textContent = 'PAUSED'; },
+    context: ['lifting'],
+  },
+  {
+    phrases: ['resume','continue','unpause'],
+    confirm: 'Resuming.',
+    action:  function() { S.running = true; voiceContext = 'lifting'; },
+    context: ['paused'],
+  },
+  {
+    phrases: ['failure','muscle failure','failed'],
+    confirm: 'Failure logged.',
+    action:  function() { S.failureAlerts++; showFormAlert('Failure logged — consider ending set', 'failure'); },
+    context: ['lifting'],
+  },
+  {
+    phrases: ['end session','finish session','done session'],
+    confirm: 'Ending session.',
+    action:  function() { S.running = false; showDone(); },
+    context: ['lifting','resting'],
+  },
+];
+
+let recognition    = null;
+let voiceContext   = 'lifting';
+let commandPending = false;
+let transcriptTimer = null;
+
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { console.warn('SpeechRecognition not supported.'); return; }
+
+  recognition               = new SR();
+  recognition.continuous    = true;
+  recognition.interimResults = true;
+  recognition.lang          = 'en-US';
+  recognition.maxAlternatives = 3;
+
+  recognition.onstart = function() { setVoiceStatus('listening'); };
+
+  recognition.onresult = function(event) {
+    if (commandPending) return;
+    let finalText = '';
+    let interimText = '';
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const t = event.results[i][0].transcript.trim().toLowerCase();
+      if (event.results[i].isFinal) { finalText += t; }
+      else { interimText += t; }
+    }
+
+    if (interimText) showTranscript(interimText);
+    if (finalText)   { showTranscript(finalText); matchCommand(finalText); }
+  };
+
+  recognition.onerror = function(e) {
+    if (e.error === 'no-speech' || e.error === 'aborted') return;
+    console.warn('Voice error:', e.error);
+  };
+
+  recognition.onend = function() {
+    // Don't restart if session is over
+    if (document.getElementById('done-screen').classList.contains('visible')) return;
+    if (document.getElementById('start-screen').style.display !== 'none') return;
+    try { recognition.start(); } catch(e) {}
+  };
+
+  recognition.start();
+  document.getElementById('voice-hud').classList.add('active');
+}
+
+function matchCommand(transcript) {
+  const active = VOICE_COMMANDS.filter(function(cmd) {
+    return cmd.context.indexOf(voiceContext) !== -1;
+  });
+
+  for (let i = 0; i < active.length; i++) {
+    const cmd = active[i];
+    for (let j = 0; j < cmd.phrases.length; j++) {
+      if (transcript.indexOf(cmd.phrases[j]) !== -1) {
+        triggerCommand(cmd);
+        return;
+      }
+    }
+  }
+
+  clearTimeout(transcriptTimer);
+  transcriptTimer = setTimeout(clearTranscript, 2000);
+}
+
+function triggerCommand(cmd) {
+  commandPending = true;
+  setVoiceStatus('heard');
+  showConfirm(cmd.confirm);
+  clearTranscript();
+
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(cmd.confirm);
+  u.rate = 1.1; u.pitch = 0.9; u.volume = 1.0;
+  u.onend = function() {
+    cmd.action();
+    commandPending = false;
+    setTimeout(function() {
+      clearConfirm();
+      setVoiceStatus('listening');
+    }, 800);
+  };
+  synth.speak(u);
+}
+
+function setVoiceStatus(state) {
+  const el    = document.getElementById('voice-status');
+  const label = document.getElementById('voice-status-label');
+  el.className = state;    // 'listening' or 'heard'
+  label.textContent = state === 'heard' ? 'HEARD' : 'LISTENING';
+}
+
+function showTranscript(text) {
+  const el = document.getElementById('voice-transcript');
+  el.textContent = '"' + text + '"';
+  el.classList.add('visible');
+  clearTimeout(transcriptTimer);
+  transcriptTimer = setTimeout(clearTranscript, 2500);
+}
+
+function clearTranscript() {
+  document.getElementById('voice-transcript').classList.remove('visible');
+}
+
+function showConfirm(text) {
+  const el = document.getElementById('voice-confirm');
+  el.textContent = text;
+  el.classList.add('visible');
+}
+
+function clearConfirm() {
+  document.getElementById('voice-confirm').classList.remove('visible');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -678,7 +828,6 @@ function endSet() {
   if (!S.running) return;
   S.running = false;
   clearFormAlert();
-
   if (S.currentSet >= cfg.sets) {
     showDone();
   } else {
@@ -687,16 +836,17 @@ function endSet() {
 }
 
 function showRest() {
-  const restEl = document.getElementById('rest-screen');
-  restEl.classList.add('visible');
+  document.getElementById('rest-screen').classList.add('visible');
   let remaining = cfg.rest;
   document.getElementById('rest-timer').textContent = remaining;
   document.getElementById('rest-next-info').textContent =
-    'SET ' + (S.currentSet + 1) + ' OF ' + cfg.sets + '  ·  ' + cfg.weight + ' LBS  ·  ' + cfg.reps + ' REPS';
+    'SET ' + (S.currentSet + 1) + ' OF ' + cfg.sets +
+    '  ·  ' + cfg.weight + ' LBS  ·  ' + cfg.reps + ' REPS';
 
   speak('Rest. ' + cfg.rest + ' seconds.', true);
+  voiceContext = 'resting';
 
-  S.restInterval = setInterval(() => {
+  S.restInterval = setInterval(function() {
     remaining--;
     document.getElementById('rest-timer').textContent = remaining;
     if (remaining <= 3 && remaining > 0) speak(String(remaining), true);
@@ -713,20 +863,21 @@ function startNextSet() {
   document.getElementById('rest-screen').classList.remove('visible');
 
   S.currentSet++;
-  S.repCount = 0;
-  S.repState = 'down';
-  S.leftPeakHistory = [];
+  S.repCount         = 0;
+  S.repState         = 'down';
+  S.leftPeakHistory  = [];
   S.rightPeakHistory = [];
-  S.leftPeakThisRep = 999;
+  S.leftPeakThisRep  = 999;
   S.rightPeakThisRep = 999;
-  S.repTimestamps = [];
+  S.repTimestamps    = [];
   S.baselineVelocity = null;
-  S.formCooldowns = {};
-  S.running = true;
+  S.formCooldowns    = {};
+  S.running          = true;
+  voiceContext       = 'lifting';
 
   document.getElementById('rep-number').textContent = '0';
-  document.getElementById('m-reps').textContent = '0';
-  document.getElementById('m-set').textContent = S.currentSet + ' / ' + cfg.sets;
+  document.getElementById('m-reps').textContent     = '0';
+  document.getElementById('m-set').textContent      = S.currentSet + ' / ' + cfg.sets;
   document.getElementById('hud-set-label').textContent = 'SET ' + S.currentSet;
   clearFormAlert();
 
@@ -735,27 +886,25 @@ function startNextSet() {
 
 function showDone() {
   const avgAsym = S.asymHistory.length
-    ? Math.round(S.asymHistory.reduce((a, b) => a + b, 0) / S.asymHistory.length)
+    ? Math.round(S.asymHistory.reduce(function(a, b) { return a + b; }, 0) / S.asymHistory.length)
     : 0;
 
-  // Progression logic from schema
-  const prog = exercise.progression;
+  const prog      = exercise.progression;
   const hitTarget = (S.totalReps / cfg.sets) >= prog.trigger_reps;
   const nextWeight = hitTarget ? cfg.weight + prog.increment_lbs : cfg.weight;
-  const nextLabel = hitTarget
+  const nextLabel  = hitTarget
     ? nextWeight + ' LBS (+' + prog.increment_lbs + ')'
     : cfg.weight + ' LBS (hold)';
 
   document.getElementById('done-sub-label').textContent =
     exercise.name.toUpperCase() + ' · ' + S.currentSet + ' SETS';
   document.getElementById('done-total-reps').textContent = S.totalReps;
-  document.getElementById('done-asym').textContent = avgAsym + '%';
-  document.getElementById('done-weight').textContent = cfg.weight + ' LBS';
-  document.getElementById('done-failure').textContent = S.failureAlerts > 0
-    ? S.failureAlerts + ' alert' + (S.failureAlerts > 1 ? 's' : '')
-    : 'None';
-  document.getElementById('done-failure').className = S.failureAlerts > 2
-    ? 'done-stat-val red' : 'done-stat-val green';
+  document.getElementById('done-asym').textContent       = avgAsym + '%';
+  document.getElementById('done-weight').textContent     = cfg.weight + ' LBS';
+  document.getElementById('done-failure').textContent    =
+    S.failureAlerts > 0 ? S.failureAlerts + ' alert' + (S.failureAlerts > 1 ? 's' : '') : 'None';
+  document.getElementById('done-failure').className =
+    S.failureAlerts > 2 ? 'done-stat-val red' : 'done-stat-val green';
   document.getElementById('done-next').textContent = nextLabel;
 
   document.getElementById('done-screen').classList.add('visible');
@@ -764,25 +913,18 @@ function showDone() {
 
 function resetApp() {
   document.getElementById('done-screen').classList.remove('visible');
+  document.getElementById('voice-hud').classList.remove('active');
   document.getElementById('start-screen').style.display = 'flex';
-  S = {
-    ...S,
-    running: false,
-    currentSet: 1,
-    repCount: 0,
-    totalReps: 0,
-    repState: 'down',
-    leftPeakHistory: [],
-    rightPeakHistory: [],
-    leftPeakThisRep: 999,
-    rightPeakThisRep: 999,
-    asymHistory: [],
-    lagCount: 0,
-    repTimestamps: [],
-    baselineVelocity: null,
-    failureAlerts: 0,
-    formCooldowns: {},
-  };
+
+  const mediapipeReady = S.mediapipeReady;
+  S = freshState();
+  S.mediapipeReady = mediapipeReady; // keep camera alive
+
+  voiceContext   = 'lifting';
+  commandPending = false;
+
+  // Stop recognition cleanly — it will not restart (start screen check in onend)
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -790,45 +932,37 @@ function resetApp() {
 // ═══════════════════════════════════════════════════════════════
 function startSession() {
   document.getElementById('start-screen').style.display = 'none';
-  document.getElementById('hud-set-label').textContent = 'SET 1';
+  document.getElementById('hud-set-label').textContent  = 'SET 1';
   document.getElementById('hud-weight-label').textContent = cfg.weight + ' LBS';
-  document.getElementById('m-set').textContent = '1 / ' + cfg.sets;
+  document.getElementById('m-set').textContent          = '1 / ' + cfg.sets;
 
-  // Reset state
-  S.running = true;
-  S.currentSet = 1;
-  S.repCount = 0;
-  S.totalReps = 0;
-  S.repState = 'down';
-  S.leftPeakHistory = [];
-  S.rightPeakHistory = [];
-  S.leftPeakThisRep = 999;
-  S.rightPeakThisRep = 999;
-  S.asymHistory = [];
-  S.lagCount = 0;
-  S.repTimestamps = [];
-  S.baselineVelocity = null;
-  S.failureAlerts = 0;
-  S.formCooldowns = {};
+  const mediapipeReady = S.mediapipeReady;
+  S = freshState();
+  S.mediapipeReady = mediapipeReady;
+  S.running        = true;
+  voiceContext     = 'lifting';
 
-  // Warm synth (iOS requires gesture)
+  // Warm synth — iOS requires a user-gesture utterance first
   synth.speak(new SpeechSynthesisUtterance(''));
-  setTimeout(() => speak('Set 1. ' + exercise.voice.start_cue, true), 400);
+  setTimeout(function() { speak('Set 1. ' + exercise.voice.start_cue, true); }, 400);
 
   if (!S.mediapipeReady) initCamera();
-}
+  if (!recognition)      initVoice();
+}  // <-- startSession closes here
 
 // ═══════════════════════════════════════════════════════════════
 // MEDIAPIPE + CANVAS RENDERER
 // ═══════════════════════════════════════════════════════════════
 function initCamera() {
-  const video = document.getElementById('video');
+  const video  = document.getElementById('video');
   const canvas = document.getElementById('overlay');
-  const ctx = canvas.getContext('2d');
-  const ex = exercise;
+  const ctx    = canvas.getContext('2d');
+  const ex     = exercise;
 
   const pose = new Pose({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+    locateFile: function(file) {
+      return 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/' + file;
+    }
   });
 
   pose.setOptions({
@@ -839,16 +973,16 @@ function initCamera() {
     minTrackingConfidence: 0.6,
   });
 
-  pose.onResults((results) => {
+  pose.onResults(function(results) {
     canvas.width  = video.videoWidth  || canvas.offsetWidth;
     canvas.height = video.videoHeight || canvas.offsetHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!results.poseLandmarks) return;
     const landmarks = results.poseLandmarks;
-
-    // Draw skeleton for tracked joints only
     const t = ex.tracking.landmarks;
+
+    // Draw skeleton
     const pairs = [
       [t.left.proximal,  t.left.joint],
       [t.left.joint,     t.left.distal],
@@ -857,12 +991,13 @@ function initCamera() {
       [t.left.proximal,  t.right.proximal],
     ];
 
-    ctx.lineWidth = 3;
-    pairs.forEach(([a, b]) => {
+    ctx.lineWidth   = 3;
+    ctx.strokeStyle = 'rgba(29,185,84,0.55)';
+    pairs.forEach(function(pair) {
+      const a = pair[0]; const b = pair[1];
       if (landmarkVisible(landmarks, a) && landmarkVisible(landmarks, b)) {
         const pa = getLandmark(landmarks, a);
         const pb = getLandmark(landmarks, b);
-        ctx.strokeStyle = 'rgba(29,185,84,0.55)';
         ctx.beginPath();
         ctx.moveTo(pa.x * canvas.width, pa.y * canvas.height);
         ctx.lineTo(pb.x * canvas.width, pb.y * canvas.height);
@@ -875,9 +1010,9 @@ function initCamera() {
       t.left.proximal, t.left.joint, t.left.distal,
       t.right.proximal, t.right.joint, t.right.distal,
     ];
-    allJoints.forEach(name => {
+    allJoints.forEach(function(name) {
       if (!landmarkVisible(landmarks, name)) return;
-      const p = getLandmark(landmarks, name);
+      const p       = getLandmark(landmarks, name);
       const isJoint = name === t.left.joint || name === t.right.joint;
       ctx.beginPath();
       ctx.arc(p.x * canvas.width, p.y * canvas.height, isJoint ? 6 : 4, 0, Math.PI * 2);
@@ -885,8 +1020,8 @@ function initCamera() {
       ctx.fill();
     });
 
-    // Angle labels at elbows
-    ctx.font = 'bold 13px monospace';
+    // Angle labels
+    ctx.font      = 'bold 13px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
 
@@ -900,12 +1035,12 @@ function initCamera() {
   });
 
   const camera = new Camera(video, {
-    onFrame: async () => { await pose.send({ image: video }); },
+    onFrame: async function() { await pose.send({ image: video }); },
     width: 640,
     height: 480,
   });
 
-  camera.start().catch(() => {
+  camera.start().catch(function() {
     alert('Camera access required. Please allow camera permissions and reload.');
   });
 
