@@ -20,7 +20,7 @@ Every exercise app has videos showing you how to do a movement. None of them wat
 
 When you lift with a training partner, something changes. You stop counting. You stop monitoring yourself. You zone out and just move the weight. That mental offloading is not a comfort feature — it produces better muscle activation. Internal focus (thinking about the muscle contracting) outperforms external focus (counting, watching the clock, monitoring form in a mirror) by a measurable margin.
 
-Every existing app makes you *more* engaged with your screen during a set. GymOS makes you *less* engaged. The screen goes to your peripheral vision. The voice handles everything.
+Every existing app makes you *more* engaged with your screen during a set. GymOS makes you *less* engaged. The screen goes to your peripheral vision. The voice handles everything. Including the commands — you never have to touch the phone at all.
 
 ---
 
@@ -28,12 +28,32 @@ Every existing app makes you *more* engaged with your screen during a set. GymOS
 
 - **Scan a QR code** on the machine. The app loads the exercise config automatically — which joints to track, what angles define a rep, how to detect asymmetry.
 - **Prop your phone** in the stand on the machine. Rear camera points at you.
-- **Lift.** The app tracks both sides independently using on-device pose detection (MediaPipe). No cloud. No latency.
-- **Voice calls each rep** the moment you return to the bottom position — confirming full range of motion was completed.
-- **Bilateral asymmetry** is tracked continuously. If your left arm peaks 15% lower than your right across recent reps, the app says "left arm lagging." Not a video tip. Your body, right now.
+- **Lift.** The app tracks both sides independently using on-device pose detection (MediaPipe). No cloud. No latency. Your data stays on your device.
+- **Voice calls each rep** the moment you return to the bottom position — confirming full range of motion was completed. No half-rep credit.
+- **Bilateral asymmetry** is tracked continuously. If your left arm peaks 15% lower than your right across recent reps, the app says "left arm lagging." Not a video tip. Your body, right now, this set.
 - **Velocity failure detection** builds a baseline from your first three reps and watches for slowdown. If your reps start taking 30% longer than your baseline, it tells you to consider ending the set.
+- **Voice commands** let you control the entire session hands-free. Say "next set," the app confirms "Ending set," then executes. No touching the screen mid-lift.
 - **Rest timer** counts down automatically between sets, speaks the last three seconds, and cues "Go" when it's time.
 - **Session summary** shows total reps, average asymmetry, failure alerts, and — based on your progression schema — what weight to use next session.
+
+---
+
+## Voice commands
+
+GymOS listens continuously during your session. Commands are context-aware — rest commands won't fire mid-set and vice versa. Every command is confirmed out loud before it executes.
+
+| Say | When | Result |
+|---|---|---|
+| "next set" / "set done" / "done" / "end set" | Lifting | Ends set, starts rest timer |
+| "skip rest" / "go" / "next" | Resting | Skips rest, starts next set |
+| "pause" / "stop" | Lifting | Freezes rep detection |
+| "resume" / "continue" | Paused | Resumes session |
+| "failure" / "muscle failure" | Lifting | Logs failure, alerts on screen |
+| "end session" / "finish session" | Lifting or resting | Goes to session summary |
+
+The mic indicator sits in the lower left of the camera view. It pulses green when listening, amber when a command was heard.
+
+> **Browser note:** Chrome on Android is the most reliable for both camera and voice recognition. Safari on iOS works but may require re-granting microphone permissions between sessions. Firefox does not support the Web Speech API.
 
 ---
 
@@ -41,14 +61,14 @@ Every existing app makes you *more* engaged with your screen during a set. GymOS
 
 - Vanilla HTML/CSS/JS — single file, no build step, no dependencies to install
 - [MediaPipe Pose](https://google.github.io/mediapipe/solutions/pose) — on-device skeleton tracking, 33 landmarks at ~30fps
-- Web Speech API — voice rep counts and form cues through whatever audio device is connected
+- Web Speech API (SpeechSynthesis + SpeechRecognition) — voice output and voice commands through any connected audio device
 - GitHub Pages — deploy directly, no server required
 
 ---
 
 ## Current build status
 
-### Done — v2
+### Done — v3
 
 - [x] Schema-driven exercise engine — exercises defined as JSON config objects, not hardcoded logic
 - [x] Landmark alias map — human-readable joint names (`left_elbow`) resolve to MediaPipe indices internally
@@ -59,7 +79,10 @@ Every existing app makes you *more* engaged with your screen during a set. GymOS
 - [x] Full extension form rule — alerts if elbows not returning to full extension at bottom
 - [x] Form rule engine — rules evaluated as typed configs, new rule types added without touching core logic
 - [x] Voice rep counting — each rep spoken on completion, no screen interaction required
+- [x] Voice command engine — continuous listening, context-aware command matching, confirmation before execution
+- [x] Pause / resume via voice
 - [x] Set and rest management — rest timer with spoken countdown, auto-advance to next set
+- [x] Skip rest via voice
 - [x] Progression logic — session summary calculates next session weight based on whether rep target was hit
 - [x] Session summary screen — total reps, avg asymmetry, failure alerts, next weight
 - [x] Single HTML file — deployable to GitHub Pages with no build step
@@ -75,18 +98,19 @@ Each machine gets a QR code that encodes the exercise and program parameters as 
 ```
 gymos.app/?exercise=lat-pulldown&weight=120&reps=10&sets=4
 ```
-App reads parameters on load, skips the setup screen, goes straight to that exercise. Gym puts the QR on the machine stand. User scans, their program is pre-loaded.
+App reads parameters on load, skips the setup screen, goes straight to that exercise. Gym puts the QR on the machine stand. User scans, their program is pre-loaded. This is the feature that makes the gym partnership model work.
 
 ### Phase 4 — Local memory
-`localStorage` stores your last session per exercise: weight, reps completed, asymmetry log. Next time you scan that machine's QR, the app already knows what you did. Progressive overload logic fires automatically — hit your target, next session bumps the weight by the configured increment. No manual entry.
+`localStorage` stores your last session per exercise: weight, reps completed, asymmetry log. Next time you scan that machine's QR, the app already knows what you did. Progressive overload logic fires automatically — hit your target, next session bumps the weight by the configured increment. No manual entry. No app account required.
 
 ### Phase 5 — Exercise library expansion
 Add the major movement patterns, each as a schema entry:
+
 - **Pull:** Lat pulldown, seated cable row, face pull
 - **Push:** Dumbbell shoulder press, chest press, lateral raise
 - **Hinge:** Romanian deadlift, cable pull-through
 - **Squat:** Goblet squat, leg press
-- **Carry/isolation:** Tricep pushdown, hammer curl
+- **Isolation:** Tricep pushdown, hammer curl, bicep curl machine
 
 Each exercise defines its own joint angles, form rules, and progression increment. The engine handles all of them without modification.
 
@@ -103,6 +127,7 @@ A workout program is a JSON file — ordered list of exercises, sets, reps, and 
 - Supabase backend — user accounts, session history, program assignment
 - History sync across devices
 - Coach/trainer accounts — assign programs to clients, view session data
+- Export to common fitness formats (CSV, Apple Health, Google Fit)
 
 ---
 
@@ -111,8 +136,8 @@ A workout program is a JSON file — ordered list of exercises, sets, reps, and 
 No installation. No build step.
 
 1. Download `index.html`
-2. Open in a mobile browser (Chrome on Android, Safari on iOS)
-3. Allow camera access when prompted
+2. Open in Chrome on Android or Safari on iOS
+3. Allow camera and microphone access when prompted
 4. Prop your phone so the camera has a clear view of both arms
 5. Configure your set, rep, and weight targets on the start screen
 6. Lift
@@ -128,11 +153,12 @@ Or deploy to GitHub Pages:
 
 ## Camera setup tips
 
-- Phone in landscape or portrait both work — portrait is easier to prop
+- Portrait orientation is easier to prop than landscape
 - 3–8 feet of distance from the camera
-- Make sure both arms are visible in frame throughout the movement
+- Make sure both arms are fully visible in frame throughout the movement
 - Good lighting matters — the pose model struggles in low light
 - For best bilateral tracking, face the camera straight on
+- A water bottle or gym bag works as a stand — anything that holds the phone stable at roughly waist height
 
 ---
 
@@ -140,12 +166,20 @@ Or deploy to GitHub Pages:
 
 The exercise schema is designed to be extended. To add a new exercise:
 
-1. Add a landmark alias to `LANDMARKS` if any new joints are needed
+1. Add any new landmark aliases to `LANDMARKS` if joints beyond the current set are needed
 2. Define the exercise config object in `EXERCISES` following the existing schema
-3. Implement any new `form_rule` types in the engine if needed
+3. Implement any new `form_rule` types in the engine if the existing types don't cover the movement
 4. Test rep detection by confirming the angle range on yourself before committing
 
 Pull requests for new exercises, new form rule types, and camera setup improvements are welcome.
+
+---
+
+## Architecture note
+
+GymOS runs entirely on-device. MediaPipe Pose inference happens locally in the browser — no video is transmitted anywhere. Voice recognition runs through the browser's Web Speech API, which on most platforms also processes locally. No account is required. No data leaves the device until Phase 8 (opt-in backend sync).
+
+This is intentional. A gym is a place people go to focus. The last thing the app should do is add network latency, login friction, or surveillance overhead to that experience.
 
 ---
 
