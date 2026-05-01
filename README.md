@@ -183,6 +183,31 @@ This is intentional. A gym is a place people go to focus. The last thing the app
 
 ---
 
+
+---
+
+## Built by
+
+James Keith Harwood II
+Sentinel AI Systems — Antonito, Colorado
+[jameskeithharwood.com](https://www.jameskeithharwood.com)
+
+---
+
 ## License
 
-MIT
+Copyright (c) 2026 James Keith Harwood II — Sentinel AI Systems. All Rights Reserved.
+
+This software may not be copied, modified, distributed, or used in any commercial
+setting without express written permission from the copyright holder. Viewing and
+personal evaluation are permitted.
+
+The concepts embodied in this software — including camera-based bilateral asymmetry
+detection during strength training, schema-driven exercise configuration, on-device
+rep counting via pose estimation, voice-commanded gym sessions, and QR-code-driven
+workout delivery to gym machines — constitute documented prior art originating with
+James Keith Harwood II, established through timestamped development records in 2026.
+
+For commercial licensing and partnership inquiries: [jameskeithharwood.com](https://www.jameskeithharwood.com)
+
+See [LICENSE](./LICENSE) for full terms.
