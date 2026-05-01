@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>GymOS</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #444;
+    --green: #1DB954;
+    --green-dim: rgba(29,185,84,0.15);
+    --amber: #F5A623;
+    --amber-dim: rgba(245,166,35,0.12);
+    --red: #E53935;
+    --red-dim: rgba(229,57,53,0.12);
+    --blue: #4A9EFF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; overflow: hidden; }
+
+  #app { display: flex; flex-direction: column; height: 100vh; max-width: 480px; margin: 0 auto; position: relative; }
+
+  /* CAMERA */
+  #camera-wrap { position: relative; flex: 1; overflow: hidden; background: #000; }
+  #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  #overlay { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+
+  /* HUD TOP */
+  #hud-top { position: absolute; top: 0; left: 0; right: 0; padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%); }
+  .hud-pill { background: rgba(0,0,0,0.6); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; font-size: 11px; letter-spacing: 0.08em; color: var(--text2); }
+  .hud-pill.live { color: var(--green); border-color: rgba(29,185,84,0.3); }
+  .hud-pill .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 6px; animation: blink 1.2s infinite; }
+
+  /* REP COUNTER */
+  #rep-display { position: absolute; bottom: 210px; left: 0; right: 0; text-align: center; z-index: 10; pointer-events: none; }
+  #rep-number { font-size: 100px; font-weight: 700; line-height: 1; color: #fff; text-shadow: 0 2px 40px rgba(0,0,0,0.9); letter-spacing: -4px; }
+  #rep-label { font-size: 11px; letter-spacing: 0.2em; color: rgba(255,255,255,0.35); margin-top: 4px; }
+
+  /* ALERTS */
+  #form-alert { position: absolute; bottom: 270px; left: 16px; right: 16px; border-radius: 10px; padding: 10px 14px; font-size: 13px; z-index: 10; text-align: center; display: none; transition: opacity 0.3s; }
+  #form-alert.asym { background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.4); color: var(--amber); display: block; }
+  #form-alert.failure { background: rgba(229,57,53,0.15); border: 1px solid rgba(229,57,53,0.4); color: var(--red); display: block; }
+  #form-alert.hidden { display: none; }
+
+  /* BOTTOM PANEL */
+  #panel { background: var(--surface); border-top: 1px solid var(--border); padding: 16px; z-index: 10; flex-shrink: 0; }
+
+  /* PHASE BAR */
+  #phase-wrap { margin-bottom: 14px; }
+  #phase-label { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  #phase-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  #phase-fill { height: 100%; border-radius: 2px; background: var(--green); width: 0%; transition: width 0.05s linear, background 0.3s; }
+
+  /* ASYM BARS */
+  #asym-section { margin-bottom: 14px; }
+  .asym-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .asym-side { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); width: 14px; }
+  .asym-bar-wrap { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .asym-bar { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.15s, background 0.3s; }
+  .asym-bar.lag { background: var(--amber); }
+  .asym-pct { font-size: 10px; color: var(--text3); width: 30px; text-align: right; }
+
+  /* METRICS */
+  #metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .metric { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+  .metric-val { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+  .metric-val.green { color: var(--green); }
+  .metric-val.amber { color: var(--amber); }
+  .metric-val.red { color: var(--red); }
+  .metric-lbl { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); margin-top: 3px; }
+
+  /* CONTROLS */
+  #controls { display: flex; gap: 10px; }
+  .btn { flex: 1; padding: 13px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: inherit; font-size: 13px; letter-spacing: 0.06em; cursor: pointer; transition: background 0.15s; }
+  .btn:active { background: #2a2a2a; }
+  .btn.primary { background: var(--green); color: #000; border-color: var(--green); font-weight: 700; }
+  .btn.primary:active { background: #17a347; }
+  .btn.danger { border-color: rgba(229,57,53,0.3); color: var(--red); }
+
+  /* START SCREEN */
+  #start-screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; z-index: 100; text-align: center; }
+  #start-screen h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; margin-bottom: 6px; }
+  #start-screen .tagline { font-size: 12px; color: var(--text3); letter-spacing: 0.1em; margin-bottom: 8px; }
+  #start-screen .exercise-tag { font-size: 11px; letter-spacing: 0.12em; color: var(--green); border: 1px solid rgba(29,185,84,0.3); border-radius: 100px; padding: 4px 14px; margin-bottom: 28px; display: inline-block; }
+
+  .setup-row { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+  .setup-row label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; }
+  .setup-row .val-ctrl { display: flex; align-items: center; gap: 14px; }
+  .setup-row .num { font-size: 20px; font-weight: 700; min-width: 36px; text-align: center; }
+  .ctrl-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  #start-btn { width: 100%; margin-top: 8px; padding: 16px; background: var(--green); color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: inherit; letter-spacing: 0.06em; cursor: pointer; }
+
+  /* REST SCREEN */
+  #rest-screen { position: absolute; inset: 0; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; z-index: 90; display: none; }
+  #rest-screen.visible { display: flex; }
+  #rest-timer { font-size: 80px; font-weight: 700; color: var(--text); letter-spacing: -3px; }
+  #rest-lbl { font-size: 11px; letter-spacing: 0.15em; color: var(--text3); margin-top: 8px; margin-bottom: 8px; }
+  #rest-next-info { font-size: 13px; color: var(--text2); margin-bottom: 36px; }
+  #skip-rest { padding: 12px 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; }
+
+  /* DONE SCREEN */
+  #done-screen { position: absolute; inset: 0; background: var(--bg); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; z-index: 100; overflow-y: auto; }
+  #done-screen.visible { display: flex; }
+  #done-screen h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  #done-screen .done-sub { font-size: 12px; color: var(--text3); letter-spacing: 0.08em; margin-bottom: 28px; }
+  .done-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; width: 100%; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .done-stat-label { font-size: 11px; letter-spacing: 0.08em; color: var(--text3); }
+  .done-stat-val { font-size: 16px; font-weight: 700; }
+  .done-stat-val.amber { color: var(--amber); }
+  .done-stat-val.green { color: var(--green); }
+  .done-stat-val.red { color: var(--red); }
+
+  /* VELOCITY BADGE */
+  #velocity-badge { position: absolute; bottom: 210px; right: 16px; font-size: 10px; letter-spacing: 0.08em; color: var(--text3); z-index: 10; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  .pop { animation: pop 0.18s ease-out; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START SCREEN -->
+  <div id="start-screen">
+    <h1>GymOS</h1>
+    <div class="tagline">STOP COUNTING. START LIFTING.</div>
+    <div class="exercise-tag" id="exercise-tag">DUMBBELL CURL · BILATERAL</div>
+
+    <div class="setup-row">
+      <label>SETS</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('sets',-1)">−</button>
+        <span class="num" id="val-sets">4</span>
+        <button class="ctrl-btn" onclick="adj('sets',1)">+</button>
+      </div>
+    </div>
+    <div class="setup-row">
+      <label>REPS TARGET</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('reps',-1)">−</button>
+        <span class="num" id="val-reps">10</span>
+        <button class="ctrl-btn" onclick="adj('reps',1)">+</button>
+      </div>
+    </div>
+    <div class="setup-row">
+      <label>WEIGHT (LBS)</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('weight',-5)">−</button>
+        <span class="num" id="val-weight">30</span>
+        <button class="ctrl-btn" onclick="adj('weight',5)">+</button>
+      </div>
+    </div>
+    <div class="setup-row">
+      <label>REST (SEC)</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('rest',-15)">−</button>
+        <span class="num" id="val-rest">60</span>
+        <button class="ctrl-btn" onclick="adj('rest',15)">+</button>
+      </div>
+    </div>
+
+    <button id="start-btn" onclick="startSession()">START SESSION</button>
+  </div>
+
+  <!-- CAMERA VIEW -->
+  <div id="camera-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+
+    <div id="hud-top">
+      <div class="hud-pill live"><span class="dot"></span><span id="hud-set-label">SET 1</span></div>
+      <div class="hud-pill" id="hud-weight-label">30 LBS</div>
+    </div>
+
+    <div id="form-alert" class="hidden"></div>
+
+    <div id="rep-display">
+      <div id="rep-number">0</div>
+      <div id="rep-label">REPS</div>
+    </div>
+
+    <div id="velocity-badge"></div>
+  </div>
+
+  <!-- BOTTOM PANEL -->
+  <div id="panel">
+    <div id="phase-wrap">
+      <div id="phase-label">
+        <span id="phase-name">WAITING</span>
+        <span id="phase-angle">–</span>
+      </div>
+      <div id="phase-track"><div id="phase-fill"></div></div>
+    </div>
+
+    <div id="asym-section">
+      <div class="asym-row">
+        <span class="asym-side">L</span>
+        <div class="asym-bar-wrap"><div class="asym-bar" id="bar-left" style="width:0%"></div></div>
+        <span class="asym-pct" id="pct-left">–</span>
+      </div>
+      <div class="asym-row">
+        <span class="asym-side">R</span>
+        <div class="asym-bar-wrap"><div class="asym-bar" id="bar-right" style="width:0%"></div></div>
+        <span class="asym-pct" id="pct-right">–</span>
+      </div>
+    </div>
+
+    <div id="metrics">
+      <div class="metric">
+        <div class="metric-val green" id="m-reps">0</div>
+        <div class="metric-lbl">REPS</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="m-set">1 / 4</div>
+        <div class="metric-lbl">SET</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="m-asym">–</div>
+        <div class="metric-lbl">ASYM %</div>
+      </div>
+    </div>
+
+    <div id="controls">
+      <button class="btn danger" onclick="endSet()">END SET</button>
+      <button class="btn primary" onclick="endSet()">SET DONE</button>
+    </div>
+  </div>
+
+  <!-- REST SCREEN -->
+  <div id="rest-screen">
+    <div id="rest-timer">60</div>
+    <div id="rest-lbl">REST</div>
+    <div id="rest-next-info"></div>
+    <button id="skip-rest" onclick="startNextSet()">SKIP REST</button>
+  </div>
+
+  <!-- DONE SCREEN -->
+  <div id="done-screen">
+    <h2>Session Complete</h2>
+    <div class="done-sub" id="done-sub-label"></div>
+    <div class="done-stat"><span class="done-stat-label">TOTAL REPS</span><span class="done-stat-val" id="done-total-reps">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">AVG ASYMMETRY</span><span class="done-stat-val amber" id="done-asym">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">WEIGHT</span><span class="done-stat-val" id="done-weight">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">FAILURE ALERTS</span><span class="done-stat-val" id="done-failure">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">NEXT SESSION</span><span class="done-stat-val green" id="done-next">–</span></div>
+    <button id="start-btn" style="margin-top:24px;width:100%" onclick="resetApp()">NEW SESSION</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// LANDMARK MAP — MediaPipe indices by name
+// ═══════════════════════════════════════════════════════════════
+const LANDMARKS = {
+  left_shoulder:  11,
+  right_shoulder: 12,
+  left_elbow:     13,
+  right_elbow:    14,
+  left_wrist:     15,
+  right_wrist:    16,
+  left_hip:       23,
+  right_hip:      24,
+  left_knee:      25,
+  right_knee:     26,
+  left_ankle:     27,
+  right_ankle:    28,
+};
+
+function lm(name) { return LANDMARKS[name]; }
+
+// ═══════════════════════════════════════════════════════════════
+// EXERCISE SCHEMA
+// ═══════════════════════════════════════════════════════════════
+const EXERCISES = {
+  'dumbbell-curl': {
+    id: 'dumbbell-curl',
+    name: 'Dumbbell Curl',
+    category: 'pull',
+    equipment: 'dumbbell',
+    bilateral: true,
+
+    tracking: {
+      type: 'elbow_flexion',
+      landmarks: {
+        left:  { proximal: 'left_shoulder',  joint: 'left_elbow',  distal: 'left_wrist'  },
+        right: { proximal: 'right_shoulder', joint: 'right_elbow', distal: 'right_wrist' },
+      }
+    },
+
+    rep: {
+      bottom_angle: 160,
+      top_angle: 50,
+      bottom_tolerance: 20,
+      top_tolerance: 15,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      {
+        id: 'bilateral_symmetry',
+        type: 'bilateral_peak_diff',
+        threshold_pct: 15,
+        cue: '{lagging_side} arm lagging',
+      },
+      {
+        id: 'full_extension',
+        type: 'angle_floor',
+        landmarks: ['left_elbow', 'right_elbow'],
+        min_angle: 140,
+        cue: 'full extension at the bottom',
+      },
+    ],
+
+    progression: {
+      increment_lbs: 5,
+      trigger_reps: 10,
+      deload_pct: 10,
+    },
+
+    voice: {
+      start_cue: 'Curl.',
+      form_prefix: '',
+    },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SESSION CONFIG
+// ═══════════════════════════════════════════════════════════════
+const cfg = { sets: 4, reps: 10, weight: 30, rest: 60 };
+let exercise = EXERCISES['dumbbell-curl'];
+
+function adj(key, delta) {
+  const bounds = { sets:[1,10], reps:[1,30], weight:[5,300], rest:[15,300] };
+  cfg[key] = Math.max(bounds[key][0], Math.min(bounds[key][1], cfg[key] + delta));
+  document.getElementById('val-' + key).textContent = cfg[key];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let S = {
+  running: false,
+  currentSet: 1,
+  repCount: 0,
+  totalReps: 0,
+  repState: 'down',       // 'down' | 'up'
+
+  // angles this frame
+  leftAngle: 0,
+  rightAngle: 0,
+
+  // peak tracking per rep
+  leftPeakHistory: [],
+  rightPeakHistory: [],
+  leftPeakThisRep: 999,
+  rightPeakThisRep: 999,
+
+  // asymmetry
+  asymHistory: [],
+  lagCount: 0,
+
+  // velocity failure
+  repTimestamps: [],      // ms timestamps when rep was at top
+  baselineVelocity: null, // ms, avg of first 3 reps
+  failureAlerts: 0,
+
+  // form rule cooldowns
+  formCooldowns: {},
+
+  restInterval: null,
+  mediapipeReady: false,
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SPEECH ENGINE
+// ═══════════════════════════════════════════════════════════════
+const synth = window.speechSynthesis;
+let speakCooldownUntil = 0;
+let lastSpoken = '';
+
+function speak(text, force = false) {
+  if (!synth) return;
+  const now = Date.now();
+  if (!force && now < speakCooldownUntil) return;
+  if (text === lastSpoken && !force) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.1; u.pitch = 0.9; u.volume = 1.0;
+  synth.speak(u);
+  lastSpoken = text;
+  speakCooldownUntil = now + 1400;
+}
+
+function speakRep(n) {
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(String(n));
+  u.rate = 1.2; u.pitch = 0.9; u.volume = 1.0;
+  synth.speak(u);
+  speakCooldownUntil = Date.now() + 900;
+  lastSpoken = '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATH
+// ═══════════════════════════════════════════════════════════════
+function angleBetween(a, b, c) {
+  const ab = { x: a.x - b.x, y: a.y - b.y };
+  const cb = { x: c.x - b.x, y: c.y - b.y };
+  const dot = ab.x * cb.x + ab.y * cb.y;
+  const mag = Math.sqrt((ab.x**2 + ab.y**2)) * Math.sqrt((cb.x**2 + cb.y**2));
+  if (mag === 0) return 0;
+  return Math.round(Math.acos(Math.max(-1, Math.min(1, dot / mag))) * (180 / Math.PI));
+}
+
+function landmarkVisible(landmarks, name) {
+  const idx = lm(name);
+  return landmarks[idx] && landmarks[idx].visibility > 0.5;
+}
+
+function getLandmark(landmarks, name) {
+  return landmarks[lm(name)];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXERCISE ENGINE — driven by schema
+// ═══════════════════════════════════════════════════════════════
+function processFrame(landmarks) {
+  if (!S.running) return;
+
+  const ex = exercise;
+  const t = ex.tracking;
+
+  // Resolve joint angles for each side
+  const sides = {};
+  for (const side of ['left', 'right']) {
+    const def = t.landmarks[side];
+    if (
+      landmarkVisible(landmarks, def.proximal) &&
+      landmarkVisible(landmarks, def.joint) &&
+      landmarkVisible(landmarks, def.distal)
+    ) {
+      sides[side] = {
+        angle: angleBetween(
+          getLandmark(landmarks, def.proximal),
+          getLandmark(landmarks, def.joint),
+          getLandmark(landmarks, def.distal)
+        ),
+        jointLM: getLandmark(landmarks, def.joint),
+      };
+    }
+  }
+
+  if (!sides.left || !sides.right) return;
+
+  const lAngle = sides.left.angle;
+  const rAngle = sides.right.angle;
+  S.leftAngle = lAngle;
+  S.rightAngle = rAngle;
+
+  // Track peak (minimum angle = maximum flexion) per rep
+  S.leftPeakThisRep = Math.min(S.leftPeakThisRep, lAngle);
+  S.rightPeakThisRep = Math.min(S.rightPeakThisRep, rAngle);
+
+  // Phase bar — map avg angle to progress
+  const rep = ex.rep;
+  const avgAngle = (lAngle + rAngle) / 2;
+  const progress = Math.max(0, Math.min(100,
+    ((rep.bottom_angle - avgAngle) / (rep.bottom_angle - rep.top_angle)) * 100
+  ));
+
+  updatePhaseBar(progress, avgAngle);
+  detectRep(lAngle, rAngle, progress, rep);
+  evaluateFormRules(ex, lAngle, rAngle);
+
+  return { lAngle, rAngle };
+}
+
+function updatePhaseBar(progress, avgAngle) {
+  document.getElementById('phase-fill').style.width = Math.round(progress) + '%';
+  document.getElementById('phase-angle').textContent = Math.round(avgAngle) + '°';
+
+  if (progress > 65) {
+    document.getElementById('phase-name').textContent = 'TOP';
+    document.getElementById('phase-fill').style.background = 'var(--green)';
+  } else if (progress < 15) {
+    document.getElementById('phase-name').textContent = 'BOTTOM';
+    document.getElementById('phase-fill').style.background = 'var(--blue)';
+  } else {
+    document.getElementById('phase-name').textContent = 'MOVING';
+    document.getElementById('phase-fill').style.background = 'var(--text3)';
+  }
+}
+
+function detectRep(lAngle, rAngle, progress, repCfg) {
+  const atTop    = lAngle < repCfg.top_angle + repCfg.top_tolerance &&
+                   rAngle < repCfg.top_angle + repCfg.top_tolerance;
+  const atBottom = lAngle > repCfg.bottom_angle - repCfg.bottom_tolerance &&
+                   rAngle > repCfg.bottom_angle - repCfg.bottom_tolerance;
+
+  if (S.repState === 'down' && atTop) {
+    S.repState = 'up';
+    S.repTimestamps.push(Date.now()); // record when we hit top
+  } else if (S.repState === 'up' && atBottom) {
+    S.repState = 'down';
+    completeRep();
+  }
+}
+
+function completeRep() {
+  // Record peak angles for this rep
+  S.leftPeakHistory.push(S.leftPeakThisRep);
+  S.rightPeakHistory.push(S.rightPeakThisRep);
+  S.leftPeakThisRep = 999;
+  S.rightPeakThisRep = 999;
+
+  // Check velocity failure
+  checkVelocityFailure();
+
+  S.repCount++;
+  S.totalReps++;
+
+  const el = document.getElementById('rep-number');
+  el.textContent = S.repCount;
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+  document.getElementById('m-reps').textContent = S.repCount;
+
+  speakRep(S.repCount);
+
+  if (S.repCount >= cfg.reps) {
+    setTimeout(() => speak('Set complete.', true), 700);
+    setTimeout(() => endSet(), 1400);
+  }
+}
+
+function checkVelocityFailure() {
+  const ts = S.repTimestamps;
+  if (ts.length < 2) return;
+
+  // Rep duration = time between consecutive tops
+  const durations = [];
+  for (let i = 1; i < ts.length; i++) {
+    durations.push(ts[i] - ts[i - 1]);
+  }
+
+  // Establish baseline from first 3 reps
+  if (durations.length === 3) {
+    S.baselineVelocity = (durations[0] + durations[1] + durations[2]) / 3;
+  }
+
+  if (!S.baselineVelocity) return;
+
+  const latest = durations[durations.length - 1];
+  const threshold = exercise.rep.velocity_failure_threshold_pct / 100;
+  const slowdown = (latest - S.baselineVelocity) / S.baselineVelocity;
+
+  const badge = document.getElementById('velocity-badge');
+  badge.textContent = Math.round(latest / 100) / 10 + 's/rep';
+
+  if (slowdown > threshold) {
+    S.failureAlerts++;
+    showFormAlert('Slowing down — ' + Math.round(slowdown * 100) + '% slower', 'failure');
+    speak('Slowing down. Consider ending set.', true);
+  }
+}
+
+// ─── FORM RULES ENGINE ────────────────────────────────────────────────────────
+function evaluateFormRules(ex, lAngle, rAngle) {
+  const now = Date.now();
+
+  for (const rule of ex.form_rules) {
+    const cooldownKey = rule.id;
+    if (S.formCooldowns[cooldownKey] && now < S.formCooldowns[cooldownKey]) continue;
+
+    if (rule.type === 'bilateral_peak_diff') {
+      evaluateBilateralDiff(rule, now);
+    } else if (rule.type === 'angle_floor') {
+      evaluateAngleFloor(rule, lAngle, rAngle, now);
+    }
+  }
+}
+
+function evaluateBilateralDiff(rule, now) {
+  if (S.leftPeakHistory.length === 0) return;
+
+  // Use recent peak history (last 3 reps)
+  const recent = 3;
+  const lRecent = S.leftPeakHistory.slice(-recent);
+  const rRecent = S.rightPeakHistory.slice(-recent);
+  const lPeak = Math.min(...lRecent); // min angle = max flexion
+  const rPeak = Math.min(...rRecent);
+
+  // Convert to flexion percentage (lower angle = more flex)
+  const lFlex = Math.max(0, exercise.rep.bottom_angle - lPeak);
+  const rFlex = Math.max(0, exercise.rep.bottom_angle - rPeak);
+  const maxFlex = Math.max(lFlex, rFlex, 1);
+
+  const lPct = Math.round((lFlex / maxFlex) * 100);
+  const rPct = Math.round((rFlex / maxFlex) * 100);
+  const diff = Math.abs(lPct - rPct);
+  const lagging = lPct < rPct ? 'left' : (rPct < lPct ? 'right' : null);
+
+  updateAsymUI(lPct, rPct, diff, lagging);
+
+  S.asymHistory.push(diff);
+
+  if (diff > rule.threshold_pct && lagging) {
+    const cue = rule.cue.replace('{lagging_side}', lagging);
+    showFormAlert(lagging.toUpperCase() + ' arm lagging — ' + diff + '% difference', 'asym');
+    speak(cue);
+    S.lagCount++;
+    S.formCooldowns[rule.id] = now + 4000;
+  } else {
+    clearFormAlert();
+  }
+}
+
+function evaluateAngleFloor(rule, lAngle, rAngle, now) {
+  if (S.repState !== 'down') return; // only check at bottom
+  const bothAngles = [lAngle, rAngle];
+  const failing = bothAngles.some(a => a < rule.min_angle);
+  if (failing) {
+    showFormAlert(rule.cue, 'asym');
+    speak(rule.cue);
+    S.formCooldowns[rule.id] = now + 5000;
+  }
+}
+
+// ─── ALERT UI ─────────────────────────────────────────────────────────────────
+let alertClearTimer = null;
+
+function showFormAlert(msg, type) {
+  const el = document.getElementById('form-alert');
+  el.textContent = msg;
+  el.className = type;
+  clearTimeout(alertClearTimer);
+  alertClearTimer = setTimeout(clearFormAlert, 3500);
+}
+
+function clearFormAlert() {
+  document.getElementById('form-alert').className = 'hidden';
+}
+
+function updateAsymUI(lPct, rPct, diff, lagging) {
+  document.getElementById('bar-left').style.width = lPct + '%';
+  document.getElementById('bar-right').style.width = rPct + '%';
+  document.getElementById('pct-left').textContent = lPct + '%';
+  document.getElementById('pct-right').textContent = rPct + '%';
+
+  document.getElementById('bar-left').className = 'asym-bar' + (lagging === 'left' ? ' lag' : '');
+  document.getElementById('bar-right').className = 'asym-bar' + (lagging === 'right' ? ' lag' : '');
+
+  const asymEl = document.getElementById('m-asym');
+  asymEl.textContent = diff + '%';
+  asymEl.className = diff > 15 ? 'metric-val amber' : (diff < 5 ? 'metric-val green' : 'metric-val');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SET / REST / SESSION MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function endSet() {
+  if (!S.running) return;
+  S.running = false;
+  clearFormAlert();
+
+  if (S.currentSet >= cfg.sets) {
+    showDone();
+  } else {
+    showRest();
+  }
+}
+
+function showRest() {
+  const restEl = document.getElementById('rest-screen');
+  restEl.classList.add('visible');
+  let remaining = cfg.rest;
+  document.getElementById('rest-timer').textContent = remaining;
+  document.getElementById('rest-next-info').textContent =
+    'SET ' + (S.currentSet + 1) + ' OF ' + cfg.sets + '  ·  ' + cfg.weight + ' LBS  ·  ' + cfg.reps + ' REPS';
+
+  speak('Rest. ' + cfg.rest + ' seconds.', true);
+
+  S.restInterval = setInterval(() => {
+    remaining--;
+    document.getElementById('rest-timer').textContent = remaining;
+    if (remaining <= 3 && remaining > 0) speak(String(remaining), true);
+    if (remaining <= 0) {
+      clearInterval(S.restInterval);
+      speak('Go.', true);
+      setTimeout(startNextSet, 500);
+    }
+  }, 1000);
+}
+
+function startNextSet() {
+  clearInterval(S.restInterval);
+  document.getElementById('rest-screen').classList.remove('visible');
+
+  S.currentSet++;
+  S.repCount = 0;
+  S.repState = 'down';
+  S.leftPeakHistory = [];
+  S.rightPeakHistory = [];
+  S.leftPeakThisRep = 999;
+  S.rightPeakThisRep = 999;
+  S.repTimestamps = [];
+  S.baselineVelocity = null;
+  S.formCooldowns = {};
+  S.running = true;
+
+  document.getElementById('rep-number').textContent = '0';
+  document.getElementById('m-reps').textContent = '0';
+  document.getElementById('m-set').textContent = S.currentSet + ' / ' + cfg.sets;
+  document.getElementById('hud-set-label').textContent = 'SET ' + S.currentSet;
+  clearFormAlert();
+
+  speak('Set ' + S.currentSet + '. ' + exercise.voice.start_cue, true);
+}
+
+function showDone() {
+  const avgAsym = S.asymHistory.length
+    ? Math.round(S.asymHistory.reduce((a, b) => a + b, 0) / S.asymHistory.length)
+    : 0;
+
+  // Progression logic from schema
+  const prog = exercise.progression;
+  const hitTarget = (S.totalReps / cfg.sets) >= prog.trigger_reps;
+  const nextWeight = hitTarget ? cfg.weight + prog.increment_lbs : cfg.weight;
+  const nextLabel = hitTarget
+    ? nextWeight + ' LBS (+' + prog.increment_lbs + ')'
+    : cfg.weight + ' LBS (hold)';
+
+  document.getElementById('done-sub-label').textContent =
+    exercise.name.toUpperCase() + ' · ' + S.currentSet + ' SETS';
+  document.getElementById('done-total-reps').textContent = S.totalReps;
+  document.getElementById('done-asym').textContent = avgAsym + '%';
+  document.getElementById('done-weight').textContent = cfg.weight + ' LBS';
+  document.getElementById('done-failure').textContent = S.failureAlerts > 0
+    ? S.failureAlerts + ' alert' + (S.failureAlerts > 1 ? 's' : '')
+    : 'None';
+  document.getElementById('done-failure').className = S.failureAlerts > 2
+    ? 'done-stat-val red' : 'done-stat-val green';
+  document.getElementById('done-next').textContent = nextLabel;
+
+  document.getElementById('done-screen').classList.add('visible');
+  speak('Session complete. ' + S.totalReps + ' total reps.', true);
+}
+
+function resetApp() {
+  document.getElementById('done-screen').classList.remove('visible');
+  document.getElementById('start-screen').style.display = 'flex';
+  S = {
+    ...S,
+    running: false,
+    currentSet: 1,
+    repCount: 0,
+    totalReps: 0,
+    repState: 'down',
+    leftPeakHistory: [],
+    rightPeakHistory: [],
+    leftPeakThisRep: 999,
+    rightPeakThisRep: 999,
+    asymHistory: [],
+    lagCount: 0,
+    repTimestamps: [],
+    baselineVelocity: null,
+    failureAlerts: 0,
+    formCooldowns: {},
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SESSION START
+// ═══════════════════════════════════════════════════════════════
+function startSession() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('hud-set-label').textContent = 'SET 1';
+  document.getElementById('hud-weight-label').textContent = cfg.weight + ' LBS';
+  document.getElementById('m-set').textContent = '1 / ' + cfg.sets;
+
+  // Reset state
+  S.running = true;
+  S.currentSet = 1;
+  S.repCount = 0;
+  S.totalReps = 0;
+  S.repState = 'down';
+  S.leftPeakHistory = [];
+  S.rightPeakHistory = [];
+  S.leftPeakThisRep = 999;
+  S.rightPeakThisRep = 999;
+  S.asymHistory = [];
+  S.lagCount = 0;
+  S.repTimestamps = [];
+  S.baselineVelocity = null;
+  S.failureAlerts = 0;
+  S.formCooldowns = {};
+
+  // Warm synth (iOS requires gesture)
+  synth.speak(new SpeechSynthesisUtterance(''));
+  setTimeout(() => speak('Set 1. ' + exercise.voice.start_cue, true), 400);
+
+  if (!S.mediapipeReady) initCamera();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MEDIAPIPE + CANVAS RENDERER
+// ═══════════════════════════════════════════════════════════════
+function initCamera() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('overlay');
+  const ctx = canvas.getContext('2d');
+  const ex = exercise;
+
+  const pose = new Pose({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  });
+
+  pose.setOptions({
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    enableSegmentation: false,
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6,
+  });
+
+  pose.onResults((results) => {
+    canvas.width  = video.videoWidth  || canvas.offsetWidth;
+    canvas.height = video.videoHeight || canvas.offsetHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!results.poseLandmarks) return;
+    const landmarks = results.poseLandmarks;
+
+    // Draw skeleton for tracked joints only
+    const t = ex.tracking.landmarks;
+    const pairs = [
+      [t.left.proximal,  t.left.joint],
+      [t.left.joint,     t.left.distal],
+      [t.right.proximal, t.right.joint],
+      [t.right.joint,    t.right.distal],
+      [t.left.proximal,  t.right.proximal],
+    ];
+
+    ctx.lineWidth = 3;
+    pairs.forEach(([a, b]) => {
+      if (landmarkVisible(landmarks, a) && landmarkVisible(landmarks, b)) {
+        const pa = getLandmark(landmarks, a);
+        const pb = getLandmark(landmarks, b);
+        ctx.strokeStyle = 'rgba(29,185,84,0.55)';
+        ctx.beginPath();
+        ctx.moveTo(pa.x * canvas.width, pa.y * canvas.height);
+        ctx.lineTo(pb.x * canvas.width, pb.y * canvas.height);
+        ctx.stroke();
+      }
+    });
+
+    // Draw joints
+    const allJoints = [
+      t.left.proximal, t.left.joint, t.left.distal,
+      t.right.proximal, t.right.joint, t.right.distal,
+    ];
+    allJoints.forEach(name => {
+      if (!landmarkVisible(landmarks, name)) return;
+      const p = getLandmark(landmarks, name);
+      const isJoint = name === t.left.joint || name === t.right.joint;
+      ctx.beginPath();
+      ctx.arc(p.x * canvas.width, p.y * canvas.height, isJoint ? 6 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = isJoint ? 'rgba(245,166,35,0.9)' : 'rgba(29,185,84,0.85)';
+      ctx.fill();
+    });
+
+    // Angle labels at elbows
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+
+    const result = processFrame(landmarks);
+    if (result) {
+      const lj = getLandmark(landmarks, t.left.joint);
+      const rj = getLandmark(landmarks, t.right.joint);
+      if (lj) ctx.fillText(result.lAngle + '°', lj.x * canvas.width, lj.y * canvas.height - 12);
+      if (rj) ctx.fillText(result.rAngle + '°', rj.x * canvas.width, rj.y * canvas.height - 12);
+    }
+  });
+
+  const camera = new Camera(video, {
+    onFrame: async () => { await pose.send({ image: video }); },
+    width: 640,
+    height: 480,
+  });
+
+  camera.start().catch(() => {
+    alert('Camera access required. Please allow camera permissions and reload.');
+  });
+
+  S.mediapipeReady = true;
+}
+</script>
+</body>
+</html>
