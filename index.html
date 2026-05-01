@@ -214,6 +214,7 @@
     <div id="phase-wrap">
       <div id="phase-label">
         <span id="phase-name">WAITING</span>
+        <span id="cadence-phase" style="color:var(--green);letter-spacing:0.08em;font-size:10px;"></span>
         <span id="phase-angle">–</span>
       </div>
       <div id="phase-track"><div id="phase-fill"></div></div>
@@ -270,7 +271,7 @@
     <div class="done-stat"><span class="done-stat-label">WEIGHT</span><span class="done-stat-val"            id="done-weight">–</span></div>
     <div class="done-stat"><span class="done-stat-label">FAILURE ALERTS</span><span class="done-stat-val"   id="done-failure">–</span></div>
     <div class="done-stat"><span class="done-stat-label">NEXT SESSION</span><span class="done-stat-val green" id="done-next">–</span></div>
-    <button id="start-btn" style="margin-top:24px;width:100%" onclick="resetApp()">NEW SESSION</button>
+    <button class="start-btn-style" style="margin-top:24px;width:100%;padding:16px;background:var(--green);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;letter-spacing:0.06em;cursor:pointer;" onclick="resetApp()">NEW SESSION</button>
   </div>
 
 </div><!-- #app -->
@@ -352,6 +353,17 @@ const EXERCISES = {
       deload_pct: 10,
     },
 
+    cadence: {
+      concentric_secs: 2,   // curl up
+      hold_secs:       1,   // hold at top
+      eccentric_secs:  3,   // lower down
+      tone_concentric: 880, // Hz — high, signals "go up"
+      tone_hold:       660, // Hz — mid, signals "hold"
+      tone_eccentric:  440, // Hz — low, signals "lower"
+      tone_beat:       520, // Hz — soft tick during movement
+      tone_duration:   80,  // ms per tone
+    },
+
     voice: {
       start_cue: 'Curl.',
     },
@@ -426,6 +438,108 @@ function speakRep(n) {
   synth.speak(u);
   speakCooldownUntil = Date.now() + 900;
   lastSpoken = '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CADENCE ENGINE — Web Audio tone guide
+// ═══════════════════════════════════════════════════════════════
+let audioCtx    = null;
+let cadenceLoop = null;
+let cadencePhase    = 'idle';   // 'idle' | 'concentric' | 'hold' | 'eccentric'
+let cadencePhaseEnd = 0;        // ms timestamp when current phase ends
+let cadenceBeatNext = 0;        // ms timestamp for next beat tick
+let cadenceEnabled  = true;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch(e) {
+    console.warn('Web Audio not available:', e);
+  }
+}
+
+function playTone(freq, durationMs, volume) {
+  if (!audioCtx || !cadenceEnabled) return;
+  try {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type      = 'sine';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(volume || 0.4, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001, audioCtx.currentTime + (durationMs / 1000)
+    );
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + (durationMs / 1000));
+  } catch(e) {}
+}
+
+function setCadenceLabel(text) {
+  const el = document.getElementById('cadence-phase');
+  if (el) el.textContent = text;
+}
+
+function startCadence() {
+  if (!audioCtx) return;
+  stopCadence();
+  const cad = exercise.cadence;
+
+  cadencePhase    = 'concentric';
+  cadencePhaseEnd = Date.now() + (cad.concentric_secs * 1000);
+  cadenceBeatNext = Date.now() + 1000;
+  playTone(cad.tone_concentric, cad.tone_duration, 0.6);
+  setCadenceLabel('CURL');
+
+  cadenceLoop = setInterval(function() {
+    if (!S.running || cadencePhase === 'idle') return;
+    const now = Date.now();
+    const cad = exercise.cadence;
+
+    // Phase transitions
+    if (now >= cadencePhaseEnd) {
+      if (cadencePhase === 'concentric') {
+        cadencePhase    = 'hold';
+        cadencePhaseEnd = now + (cad.hold_secs * 1000);
+        cadenceBeatNext = now + 99999;
+        playTone(cad.tone_hold, cad.tone_duration, 0.5);
+        setCadenceLabel('HOLD');
+
+      } else if (cadencePhase === 'hold') {
+        cadencePhase    = 'eccentric';
+        cadencePhaseEnd = now + (cad.eccentric_secs * 1000);
+        cadenceBeatNext = now + 1000;
+        playTone(cad.tone_eccentric, cad.tone_duration, 0.6);
+        setCadenceLabel('LOWER');
+
+      } else if (cadencePhase === 'eccentric') {
+        cadencePhase = 'idle';
+        setCadenceLabel('');
+        stopCadence();
+      }
+      return;
+    }
+
+    // Beat ticks during concentric and eccentric
+    if (now >= cadenceBeatNext && cadencePhase !== 'hold') {
+      playTone(cad.tone_beat, 40, 0.2);
+      cadenceBeatNext = now + 1000;
+    }
+
+  }, 50);
+}
+
+function stopCadence() {
+  if (cadenceLoop) { clearInterval(cadenceLoop); cadenceLoop = null; }
+  cadencePhase = 'idle';
+  setCadenceLabel('');
+}
+
+function resetCadence() {
+  stopCadence();
+  cadenceEnabled = true;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -524,9 +638,13 @@ function detectRep(lAngle, rAngle, repCfg) {
   if (S.repState === 'down' && atTop) {
     S.repState = 'up';
     S.repTimestamps.push(Date.now());
+    // Rep is at top — fire hold tone then eccentric
+    // cadence already running from bottom trigger; let it transition naturally
   } else if (S.repState === 'up' && atBottom) {
     S.repState = 'down';
     completeRep();
+    // Restart cadence for next rep after brief pause
+    setTimeout(startCadence, 400);
   }
 }
 
@@ -553,7 +671,11 @@ function completeRep() {
   if (S.repCount >= cfg.reps) {
     setTimeout(function() { speak('Set complete.', true); }, 700);
     setTimeout(endSet, 1400);
+    // Don't restart cadence — set is finishing
+    return;
   }
+  // Restart cadence for next rep
+  setTimeout(startCadence, 400);
 }
 
 function checkVelocityFailure() {
@@ -682,13 +804,13 @@ const VOICE_COMMANDS = [
   {
     phrases: ['pause','stop'],
     confirm: 'Paused.',
-    action:  function() { S.running = false; voiceContext = 'paused'; document.getElementById('phase-name').textContent = 'PAUSED'; },
+    action:  function() { S.running = false; voiceContext = 'paused'; stopCadence(); document.getElementById('phase-name').textContent = 'PAUSED'; },
     context: ['lifting'],
   },
   {
     phrases: ['resume','continue','unpause'],
     confirm: 'Resuming.',
-    action:  function() { S.running = true; voiceContext = 'lifting'; },
+    action:  function() { S.running = true; voiceContext = 'lifting'; startCadence(); },
     context: ['paused'],
   },
   {
@@ -827,6 +949,7 @@ function clearConfirm() {
 function endSet() {
   if (!S.running) return;
   S.running = false;
+  stopCadence();
   clearFormAlert();
   if (S.currentSet >= cfg.sets) {
     showDone();
@@ -882,6 +1005,7 @@ function startNextSet() {
   clearFormAlert();
 
   speak('Set ' + S.currentSet + '. ' + exercise.voice.start_cue, true);
+  setTimeout(startCadence, 1200);
 }
 
 function showDone() {
@@ -923,6 +1047,8 @@ function resetApp() {
   voiceContext   = 'lifting';
   commandPending = false;
 
+  resetCadence();
+
   // Stop recognition cleanly — it will not restart (start screen check in onend)
   if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
 }
@@ -944,7 +1070,11 @@ function startSession() {
 
   // Warm synth — iOS requires a user-gesture utterance first
   synth.speak(new SpeechSynthesisUtterance(''));
-  setTimeout(function() { speak('Set 1. ' + exercise.voice.start_cue, true); }, 400);
+  initAudio();
+  setTimeout(function() {
+    speak('Set 1. ' + exercise.voice.start_cue, true);
+    setTimeout(startCadence, 1200);
+  }, 400);
 
   if (!S.mediapipeReady) initCamera();
   if (!recognition)      initVoice();
