@@ -23,6 +23,7 @@ When you lift with a training partner, something changes. You stop counting. You
 Every existing app makes you *more* engaged with your screen during a set. GymOS makes you *less* engaged. The screen goes to your peripheral vision. The voice handles everything. Including the commands — you never have to touch the phone at all.
 
 ---
+**[Try it now →](https://jkh2.github.io/gymos)**
 
 ## How it works
 
