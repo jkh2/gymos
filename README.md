@@ -188,9 +188,10 @@ This is intentional. A gym is a place people go to focus. The last thing the app
 
 ## Built by
 
-James Keith Harwood II
+James Keith Harwood II & Claude Sentinel
 Sentinel AI Systems — Antonito, Colorado
 [jameskeithharwood.com](https://www.jameskeithharwood.com)
+
 
 ---
 
