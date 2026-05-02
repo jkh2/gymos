@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>GymOS</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #444;
+    --green: #1DB954;
+    --amber: #F5A623;
+    --red: #E53935;
+    --blue: #4A9EFF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; overflow: hidden; }
+  #app { display: flex; flex-direction: column; height: 100vh; max-width: 480px; margin: 0 auto; position: relative; }
+
+  /* CAMERA */
+  #camera-wrap { position: relative; flex: 1; overflow: hidden; background: #000; }
+  #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  #overlay { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+
+  /* HUD TOP */
+  #hud-top { position: absolute; top: 0; left: 0; right: 0; padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%); }
+  .hud-pill { background: rgba(0,0,0,0.6); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; font-size: 11px; letter-spacing: 0.08em; color: var(--text2); }
+  .hud-pill.live { color: var(--green); border-color: rgba(29,185,84,0.3); }
+  .hud-pill .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 6px; animation: blink 1.2s infinite; }
+
+  /* CAMERA HINT */
+  #camera-hint { position: absolute; top: 56px; left: 0; right: 0; text-align: center; z-index: 10; font-size: 10px; letter-spacing: 0.12em; color: rgba(255,255,255,0.3); }
+
+  /* REP COUNTER */
+  #rep-display { position: absolute; bottom: 210px; left: 0; right: 0; text-align: center; z-index: 10; pointer-events: none; }
+  #rep-number { font-size: 100px; font-weight: 700; line-height: 1; color: #fff; text-shadow: 0 2px 40px rgba(0,0,0,0.9); letter-spacing: -4px; }
+  #rep-label { font-size: 11px; letter-spacing: 0.2em; color: rgba(255,255,255,0.35); margin-top: 4px; }
+
+  /* ALERTS */
+  #form-alert { position: absolute; bottom: 270px; left: 16px; right: 16px; border-radius: 10px; padding: 10px 14px; font-size: 13px; z-index: 10; text-align: center; display: none; }
+  #form-alert.asym    { background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.4); color: var(--amber); display: block; }
+  #form-alert.failure { background: rgba(229,57,53,0.15);  border: 1px solid rgba(229,57,53,0.4);  color: var(--red);   display: block; }
+  #form-alert.hidden  { display: none; }
+
+  /* VELOCITY + VOICE HUD */
+  #velocity-badge { position: absolute; bottom: 210px; right: 16px; font-size: 10px; letter-spacing: 0.08em; color: var(--text3); z-index: 10; }
+  #voice-hud { position: absolute; bottom: 210px; left: 16px; z-index: 10; display: none; flex-direction: column; align-items: flex-start; gap: 6px; }
+  #voice-hud.active { display: flex; }
+  #voice-status { font-size: 10px; letter-spacing: 0.1em; display: flex; align-items: center; gap: 6px; }
+  #voice-status .mic-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  #voice-status.listening .mic-dot { background: var(--green); animation: blink 0.8s infinite; }
+  #voice-status.heard    .mic-dot { background: var(--amber); }
+  #voice-status-label { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); }
+  #voice-status.heard #voice-status-label { color: var(--amber); }
+  #voice-transcript { font-size: 12px; color: var(--text2); background: rgba(0,0,0,0.6); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; max-width: 180px; display: none; }
+  #voice-transcript.visible { display: block; }
+  #voice-confirm { font-size: 12px; color: var(--green); background: rgba(0,0,0,0.6); border: 1px solid rgba(29,185,84,0.3); border-radius: 8px; padding: 4px 10px; display: none; }
+  #voice-confirm.visible { display: block; }
+
+  /* BOTTOM PANEL */
+  #panel { background: var(--surface); border-top: 1px solid var(--border); padding: 16px; z-index: 10; flex-shrink: 0; }
+  #phase-wrap { margin-bottom: 14px; }
+  #phase-label { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  #phase-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  #phase-fill { height: 100%; border-radius: 2px; background: var(--green); width: 0%; transition: width 0.05s linear, background 0.3s; }
+  #asym-section { margin-bottom: 14px; }
+  .asym-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .asym-side { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); width: 14px; }
+  .asym-bar-wrap { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .asym-bar { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.15s, background 0.3s; }
+  .asym-bar.lag { background: var(--amber); }
+  .asym-pct { font-size: 10px; color: var(--text3); width: 30px; text-align: right; }
+  #metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .metric { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+  .metric-val { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+  .metric-val.green { color: var(--green); }
+  .metric-val.amber { color: var(--amber); }
+  .metric-val.red   { color: var(--red); }
+  .metric-lbl { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); margin-top: 3px; }
+  #controls { display: flex; gap: 10px; }
+  .btn { flex: 1; padding: 13px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: inherit; font-size: 13px; letter-spacing: 0.06em; cursor: pointer; transition: background 0.15s; }
+  .btn:active { background: #2a2a2a; }
+  .btn.primary { background: var(--green); color: #000; border-color: var(--green); font-weight: 700; }
+  .btn.primary:active { background: #17a347; }
+  .btn.danger { border-color: rgba(229,57,53,0.3); color: var(--red); }
+
+  /* START SCREEN */
+  #start-screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 24px 24px 0; z-index: 100; overflow-y: auto; }
+  #start-screen h1 { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; margin-top: 8px; }
+  #start-screen .tagline { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; margin-bottom: 18px; }
+
+  /* EXERCISE PICKER */
+  #exercise-picker { width: 100%; margin-bottom: 18px; }
+  .picker-label { font-size: 10px; letter-spacing: 0.12em; color: var(--text3); margin-bottom: 10px; }
+  #exercise-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .ex-btn { padding: 10px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-family: inherit; font-size: 11px; letter-spacing: 0.06em; cursor: pointer; text-align: left; transition: all 0.15s; }
+  .ex-btn:hover { border-color: rgba(29,185,84,0.4); color: var(--text); }
+  .ex-btn.selected { background: var(--green-dim, rgba(29,185,84,0.1)); border-color: var(--green); color: var(--green); }
+  .ex-btn .ex-name { font-weight: 600; font-size: 12px; display: block; margin-bottom: 2px; }
+  .ex-btn .ex-meta { font-size: 10px; color: var(--text3); }
+  .ex-btn.selected .ex-meta { color: rgba(29,185,84,0.6); }
+
+  /* SETUP ROWS */
+  .setup-row { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; }
+  .setup-row label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; }
+  .setup-row .val-ctrl { display: flex; align-items: center; gap: 14px; }
+  .setup-row .num { font-size: 20px; font-weight: 700; min-width: 36px; text-align: center; }
+  .ctrl-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #start-btn { width: 100%; margin: 12px 0 24px; padding: 16px; background: var(--green); color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: inherit; letter-spacing: 0.06em; cursor: pointer; flex-shrink: 0; }
+
+  /* REST SCREEN */
+  #rest-screen { position: absolute; inset: 0; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; z-index: 90; display: none; }
+  #rest-screen.visible { display: flex; }
+  #rest-timer { font-size: 80px; font-weight: 700; color: var(--text); letter-spacing: -3px; }
+  #rest-lbl { font-size: 11px; letter-spacing: 0.15em; color: var(--text3); margin-top: 8px; margin-bottom: 8px; }
+  #rest-next-info { font-size: 13px; color: var(--text2); margin-bottom: 36px; text-align: center; padding: 0 24px; }
+  #skip-rest { padding: 12px 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; }
+
+  /* DONE SCREEN */
+  #done-screen { position: absolute; inset: 0; background: var(--bg); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; z-index: 100; overflow-y: auto; }
+  #done-screen.visible { display: flex; }
+  #done-screen h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  #done-screen .done-sub { font-size: 12px; color: var(--text3); letter-spacing: 0.08em; margin-bottom: 28px; }
+  .done-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; width: 100%; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .done-stat-label { font-size: 11px; letter-spacing: 0.08em; color: var(--text3); }
+  .done-stat-val { font-size: 16px; font-weight: 700; }
+  .done-stat-val.amber { color: var(--amber); }
+  .done-stat-val.green { color: var(--green); }
+  .done-stat-val.red   { color: var(--red); }
+  #new-session-btn { width: 100%; margin-top: 24px; padding: 16px; background: var(--green); color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: inherit; letter-spacing: 0.06em; cursor: pointer; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  @keyframes pop   { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  .pop { animation: pop 0.18s ease-out; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START SCREEN -->
+  <div id="start-screen">
+    <h1>GymOS</h1>
+    <div class="tagline">STOP COUNTING. START LIFTING.</div>
+
+    <div id="exercise-picker">
+      <div class="picker-label">SELECT EXERCISE</div>
+      <div id="exercise-grid"></div>
+    </div>
+
+    <div class="setup-row">
+      <label>SETS</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('sets',-1)">−</button>
+        <span class="num" id="val-sets">4</span>
+        <button class="ctrl-btn" onclick="adj('sets',1)">+</button>
+      </div>
+    </div>
+    <div class="setup-row">
+      <label>REPS TARGET</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('reps',-1)">−</button>
+        <span class="num" id="val-reps">10</span>
+        <button class="ctrl-btn" onclick="adj('reps',1)">+</button>
+      </div>
+    </div>
+    <div class="setup-row">
+      <label>WEIGHT (LBS)</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('weight',-5)">−</button>
+        <span class="num" id="val-weight">30</span>
+        <button class="ctrl-btn" onclick="adj('weight',5)">+</button>
+      </div>
+    </div>
+    <div class="setup-row">
+      <label>REST (SEC)</label>
+      <div class="val-ctrl">
+        <button class="ctrl-btn" onclick="adj('rest',-15)">−</button>
+        <span class="num" id="val-rest">60</span>
+        <button class="ctrl-btn" onclick="adj('rest',15)">+</button>
+      </div>
+    </div>
+
+    <button id="start-btn" onclick="startSession()">START SESSION</button>
+  </div>
+
+  <!-- CAMERA VIEW -->
+  <div id="camera-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+    <div id="hud-top">
+      <div class="hud-pill live"><span class="dot"></span><span id="hud-set-label">SET 1</span></div>
+      <div class="hud-pill" id="hud-weight-label">30 LBS</div>
+    </div>
+    <div id="camera-hint"></div>
+    <div id="form-alert" class="hidden"></div>
+    <div id="rep-display">
+      <div id="rep-number">0</div>
+      <div id="rep-label">REPS</div>
+    </div>
+    <div id="velocity-badge"></div>
+    <div id="voice-hud">
+      <div id="voice-status" class="listening">
+        <span class="mic-dot"></span>
+        <span id="voice-status-label">LISTENING</span>
+      </div>
+      <div id="voice-transcript"></div>
+      <div id="voice-confirm"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM PANEL -->
+  <div id="panel">
+    <div id="phase-wrap">
+      <div id="phase-label">
+        <span id="phase-name">WAITING</span>
+        <span id="cadence-phase" style="color:var(--green);letter-spacing:0.08em;font-size:10px;"></span>
+        <span id="phase-angle">–</span>
+      </div>
+      <div id="phase-track"><div id="phase-fill"></div></div>
+    </div>
+    <div id="asym-section">
+      <div class="asym-row">
+        <span class="asym-side">L</span>
+        <div class="asym-bar-wrap"><div class="asym-bar" id="bar-left" style="width:0%"></div></div>
+        <span class="asym-pct" id="pct-left">–</span>
+      </div>
+      <div class="asym-row">
+        <span class="asym-side">R</span>
+        <div class="asym-bar-wrap"><div class="asym-bar" id="bar-right" style="width:0%"></div></div>
+        <span class="asym-pct" id="pct-right">–</span>
+      </div>
+    </div>
+    <div id="metrics">
+      <div class="metric"><div class="metric-val green" id="m-reps">0</div><div class="metric-lbl">REPS</div></div>
+      <div class="metric"><div class="metric-val" id="m-set">1 / 4</div><div class="metric-lbl">SET</div></div>
+      <div class="metric"><div class="metric-val" id="m-asym">–</div><div class="metric-lbl">ASYM %</div></div>
+    </div>
+    <div id="controls">
+      <button class="btn danger"  onclick="endSet()">END SET</button>
+      <button class="btn primary" onclick="endSet()">SET DONE</button>
+    </div>
+  </div>
+
+  <!-- REST SCREEN -->
+  <div id="rest-screen">
+    <div id="rest-timer">60</div>
+    <div id="rest-lbl">REST</div>
+    <div id="rest-next-info"></div>
+    <button id="skip-rest" onclick="startNextSet()">SKIP REST</button>
+  </div>
+
+  <!-- DONE SCREEN -->
+  <div id="done-screen">
+    <h2>Session Complete</h2>
+    <div class="done-sub" id="done-sub-label"></div>
+    <div class="done-stat"><span class="done-stat-label">TOTAL REPS</span><span class="done-stat-val" id="done-total-reps">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">AVG ASYMMETRY</span><span class="done-stat-val amber" id="done-asym">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">WEIGHT</span><span class="done-stat-val" id="done-weight">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">FAILURE ALERTS</span><span class="done-stat-val" id="done-failure">–</span></div>
+    <div class="done-stat"><span class="done-stat-label">NEXT SESSION</span><span class="done-stat-val green" id="done-next">–</span></div>
+    <button id="new-session-btn" onclick="resetApp()">NEW SESSION</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// LANDMARK MAP
+// ═══════════════════════════════════════════════════════════════
+const LANDMARKS = {
+  left_shoulder:  11,
+  right_shoulder: 12,
+  left_elbow:     13,
+  right_elbow:    14,
+  left_wrist:     15,
+  right_wrist:    16,
+  left_hip:       23,
+  right_hip:      24,
+  left_knee:      25,
+  right_knee:     26,
+  left_ankle:     27,
+  right_ankle:    28,
+};
+function lm(name) { return LANDMARKS[name]; }
+
+// ═══════════════════════════════════════════════════════════════
+// EXERCISE SCHEMA
+// movement_type:
+//   'flexion'   — angle DECREASES toward peak (curl, pec fly)
+//   'extension' — angle INCREASES toward peak (press, squat, deadlift)
+// ═══════════════════════════════════════════════════════════════
+const EXERCISES = {
+
+  'dumbbell-curl': {
+    id: 'dumbbell-curl',
+    name: 'Dumbbell Curl',
+    category: 'pull',
+    equipment: 'dumbbell',
+    bilateral: true,
+    movement_type: 'flexion',
+    camera_hint: 'FACE CAMERA · ARMS VISIBLE',
+    default_weight: 30,
+
+    tracking: {
+      landmarks: {
+        left:  { proximal: 'left_shoulder',  joint: 'left_elbow',  distal: 'left_wrist'  },
+        right: { proximal: 'right_shoulder', joint: 'right_elbow', distal: 'right_wrist' },
+      },
+    },
+
+    rep: {
+      bottom_angle: 160,
+      top_angle:    50,
+      bottom_tolerance: 20,
+      top_tolerance:    15,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      { id: 'bilateral_symmetry', type: 'bilateral_peak_diff', threshold_pct: 15, cue: '{lagging_side} arm lagging' },
+      { id: 'full_extension',     type: 'angle_floor',         landmarks: ['left_elbow','right_elbow'], min_angle: 140, cue: 'full extension at the bottom' },
+    ],
+
+    cadence: { concentric_secs: 2, hold_secs: 1, eccentric_secs: 3, tone_concentric: 880, tone_hold: 660, tone_eccentric: 440, tone_beat: 520, tone_duration: 80 },
+    progression: { increment_lbs: 5, trigger_reps: 10, deload_pct: 10 },
+    voice: { start_cue: 'Curl.' },
+  },
+
+  'shoulder-press': {
+    id: 'shoulder-press',
+    name: 'Shoulder Press',
+    category: 'push',
+    equipment: 'dumbbell',
+    bilateral: true,
+    movement_type: 'extension',
+    camera_hint: 'FACE CAMERA · ARMS VISIBLE',
+    default_weight: 40,
+
+    tracking: {
+      landmarks: {
+        left:  { proximal: 'left_shoulder',  joint: 'left_elbow',  distal: 'left_wrist'  },
+        right: { proximal: 'right_shoulder', joint: 'right_elbow', distal: 'right_wrist' },
+      },
+    },
+
+    rep: {
+      bottom_angle: 80,
+      top_angle:    160,
+      bottom_tolerance: 20,
+      top_tolerance:    15,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      { id: 'bilateral_symmetry', type: 'bilateral_peak_diff', threshold_pct: 15, cue: '{lagging_side} arm lagging' },
+    ],
+
+    cadence: { concentric_secs: 2, hold_secs: 0, eccentric_secs: 3, tone_concentric: 880, tone_hold: 660, tone_eccentric: 440, tone_beat: 520, tone_duration: 80 },
+    progression: { increment_lbs: 5, trigger_reps: 10, deload_pct: 10 },
+    voice: { start_cue: 'Press.' },
+  },
+
+  'bench-press': {
+    id: 'bench-press',
+    name: 'Bench Press',
+    category: 'push',
+    equipment: 'barbell',
+    bilateral: true,
+    movement_type: 'extension',
+    camera_hint: 'SIDE VIEW · PHONE AT CHEST LEVEL',
+    default_weight: 135,
+
+    tracking: {
+      landmarks: {
+        left:  { proximal: 'left_shoulder',  joint: 'left_elbow',  distal: 'left_wrist'  },
+        right: { proximal: 'right_shoulder', joint: 'right_elbow', distal: 'right_wrist' },
+      },
+    },
+
+    rep: {
+      bottom_angle: 70,
+      top_angle:    160,
+      bottom_tolerance: 20,
+      top_tolerance:    15,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      { id: 'bilateral_symmetry', type: 'bilateral_peak_diff', threshold_pct: 15, cue: '{lagging_side} arm lagging' },
+    ],
+
+    cadence: { concentric_secs: 2, hold_secs: 0, eccentric_secs: 3, tone_concentric: 880, tone_hold: 660, tone_eccentric: 440, tone_beat: 520, tone_duration: 80 },
+    progression: { increment_lbs: 5, trigger_reps: 10, deload_pct: 10 },
+    voice: { start_cue: 'Press.' },
+  },
+
+  'incline-press': {
+    id: 'incline-press',
+    name: 'Incline Press',
+    category: 'push',
+    equipment: 'barbell',
+    bilateral: true,
+    movement_type: 'extension',
+    camera_hint: 'SIDE VIEW · PHONE AT CHEST LEVEL',
+    default_weight: 95,
+
+    tracking: {
+      landmarks: {
+        left:  { proximal: 'left_shoulder',  joint: 'left_elbow',  distal: 'left_wrist'  },
+        right: { proximal: 'right_shoulder', joint: 'right_elbow', distal: 'right_wrist' },
+      },
+    },
+
+    rep: {
+      bottom_angle: 75,
+      top_angle:    155,
+      bottom_tolerance: 20,
+      top_tolerance:    15,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      { id: 'bilateral_symmetry', type: 'bilateral_peak_diff', threshold_pct: 15, cue: '{lagging_side} arm lagging' },
+    ],
+
+    cadence: { concentric_secs: 2, hold_secs: 0, eccentric_secs: 3, tone_concentric: 880, tone_hold: 660, tone_eccentric: 440, tone_beat: 520, tone_duration: 80 },
+    progression: { increment_lbs: 5, trigger_reps: 10, deload_pct: 10 },
+    voice: { start_cue: 'Press.' },
+  },
+
+  'squat': {
+    id: 'squat',
+    name: 'Squat',
+    category: 'legs',
+    equipment: 'barbell',
+    bilateral: true,
+    movement_type: 'extension',
+    camera_hint: 'SIDE VIEW · FULL BODY VISIBLE',
+    default_weight: 135,
+
+    tracking: {
+      landmarks: {
+        left:  { proximal: 'left_hip',  joint: 'left_knee',  distal: 'left_ankle'  },
+        right: { proximal: 'right_hip', joint: 'right_knee', distal: 'right_ankle' },
+      },
+    },
+
+    rep: {
+      bottom_angle: 90,
+      top_angle:    170,
+      bottom_tolerance: 20,
+      top_tolerance:    10,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      { id: 'bilateral_symmetry', type: 'bilateral_peak_diff', threshold_pct: 15, cue: '{lagging_side} knee lagging' },
+      { id: 'depth_check',        type: 'angle_ceiling',       landmarks: ['left_knee','right_knee'], max_angle: 110, cue: 'get deeper on the squat' },
+    ],
+
+    cadence: { concentric_secs: 2, hold_secs: 0, eccentric_secs: 3, tone_concentric: 880, tone_hold: 660, tone_eccentric: 440, tone_beat: 520, tone_duration: 80 },
+    progression: { increment_lbs: 10, trigger_reps: 5, deload_pct: 10 },
+    voice: { start_cue: 'Squat.' },
+  },
+
+  'deadlift': {
+    id: 'deadlift',
+    name: 'Deadlift',
+    category: 'hinge',
+    equipment: 'barbell',
+    bilateral: true,
+    movement_type: 'extension',
+    camera_hint: 'SIDE VIEW · FULL BODY VISIBLE',
+    default_weight: 135,
+
+    tracking: {
+      landmarks: {
+        left:  { proximal: 'left_shoulder',  joint: 'left_hip',  distal: 'left_knee'  },
+        right: { proximal: 'right_shoulder', joint: 'right_hip', distal: 'right_knee' },
+      },
+    },
+
+    rep: {
+      bottom_angle: 60,
+      top_angle:    170,
+      bottom_tolerance: 20,
+      top_tolerance:    10,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      { id: 'bilateral_symmetry', type: 'bilateral_peak_diff', threshold_pct: 15, cue: '{lagging_side} side lagging' },
+    ],
+
+    cadence: { concentric_secs: 2, hold_secs: 1, eccentric_secs: 3, tone_concentric: 880, tone_hold: 660, tone_eccentric: 440, tone_beat: 520, tone_duration: 80 },
+    progression: { increment_lbs: 10, trigger_reps: 5, deload_pct: 10 },
+    voice: { start_cue: 'Pull.' },
+  },
+
+  'pec-fly': {
+    id: 'pec-fly',
+    name: 'Pec Fly',
+    category: 'push',
+    equipment: 'dumbbell',
+    bilateral: true,
+    movement_type: 'flexion',
+    camera_hint: 'SIDE VIEW · PHONE AT CHEST LEVEL',
+    default_weight: 25,
+
+    tracking: {
+      landmarks: {
+        left:  { proximal: 'left_hip',  joint: 'left_shoulder',  distal: 'left_wrist'  },
+        right: { proximal: 'right_hip', joint: 'right_shoulder', distal: 'right_wrist' },
+      },
+    },
+
+    rep: {
+      bottom_angle: 150,
+      top_angle:    40,
+      bottom_tolerance: 20,
+      top_tolerance:    20,
+      count_on: 'descend',
+      velocity_failure_threshold_pct: 30,
+    },
+
+    form_rules: [
+      { id: 'bilateral_symmetry', type: 'bilateral_peak_diff', threshold_pct: 15, cue: '{lagging_side} arm lagging' },
+    ],
+
+    cadence: { concentric_secs: 2, hold_secs: 1, eccentric_secs: 3, tone_concentric: 880, tone_hold: 660, tone_eccentric: 440, tone_beat: 520, tone_duration: 80 },
+    progression: { increment_lbs: 5, trigger_reps: 12, deload_pct: 10 },
+    voice: { start_cue: 'Fly.' },
+  },
+
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SESSION CONFIG
+// ═══════════════════════════════════════════════════════════════
+const cfg = { sets: 4, reps: 10, weight: 30, rest: 60 };
+let exercise = EXERCISES['dumbbell-curl'];
+
+function adj(key, delta) {
+  const bounds = { sets:[1,10], reps:[1,30], weight:[5,400], rest:[15,300] };
+  cfg[key] = Math.max(bounds[key][0], Math.min(bounds[key][1], cfg[key] + delta));
+  document.getElementById('val-' + key).textContent = cfg[key];
+}
+
+function selectExercise(id) {
+  exercise = EXERCISES[id];
+  cfg.weight = exercise.default_weight;
+  document.getElementById('val-weight').textContent = cfg.weight;
+  document.querySelectorAll('.ex-btn').forEach(function(b) {
+    b.classList.toggle('selected', b.dataset.id === id);
+  });
+}
+
+function buildExercisePicker() {
+  const grid = document.getElementById('exercise-grid');
+  Object.values(EXERCISES).forEach(function(ex) {
+    const btn = document.createElement('button');
+    btn.className = 'ex-btn' + (ex.id === exercise.id ? ' selected' : '');
+    btn.dataset.id = ex.id;
+    btn.innerHTML = '<span class="ex-name">' + ex.name + '</span><span class="ex-meta">' + ex.camera_hint + '</span>';
+    btn.onclick = function() { selectExercise(ex.id); };
+    grid.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+function freshState() {
+  return {
+    running: false,
+    currentSet: 1,
+    repCount: 0,
+    totalReps: 0,
+    repState: 'down',
+    leftAngle: 0,
+    rightAngle: 0,
+    leftPeakHistory:  [],
+    rightPeakHistory: [],
+    leftPeakThisRep:  null,  // null until first reading
+    rightPeakThisRep: null,
+    asymHistory:    [],
+    lagCount:       0,
+    repTimestamps:  [],
+    baselineVelocity: null,
+    failureAlerts:  0,
+    formCooldowns:  {},
+    restInterval:   null,
+    mediapipeReady: false,
+  };
+}
+let S = freshState();
+
+// ═══════════════════════════════════════════════════════════════
+// SPEECH OUTPUT
+// ═══════════════════════════════════════════════════════════════
+const synth = window.speechSynthesis;
+let speakCooldownUntil = 0;
+let lastSpoken = '';
+
+function speak(text, force) {
+  if (!synth) return;
+  const now = Date.now();
+  if (!force && now < speakCooldownUntil) return;
+  if (!force && text === lastSpoken) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.1; u.pitch = 0.9; u.volume = 1.0;
+  synth.speak(u);
+  lastSpoken = text;
+  speakCooldownUntil = now + 1400;
+}
+
+function speakRep(n) {
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(String(n));
+  u.rate = 1.2; u.pitch = 0.9; u.volume = 1.0;
+  synth.speak(u);
+  speakCooldownUntil = Date.now() + 900;
+  lastSpoken = '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CADENCE ENGINE
+// ═══════════════════════════════════════════════════════════════
+let audioCtx       = null;
+let cadenceLoop    = null;
+let cadencePhase   = 'idle';
+let cadencePhaseEnd = 0;
+let lastToneTime    = 0;
+const TONE_GAP_MS   = 300; // minimum ms between any two tones
+
+function initAudio() {
+  if (audioCtx) return;
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+}
+
+function playTone(freq, durationMs, volume) {
+  if (!audioCtx) return;
+  const now = Date.now();
+  if (now - lastToneTime < TONE_GAP_MS) return; // gate: prevent stacking
+  lastToneTime = now;
+  try {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(volume || 0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + durationMs / 1000);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + durationMs / 1000);
+  } catch(e) {}
+}
+
+function setCadenceLabel(text) {
+  var el = document.getElementById('cadence-phase');
+  if (el) el.textContent = text;
+}
+
+function startCadence() {
+  if (!audioCtx) return;
+  stopCadence();
+  var cad = exercise.cadence;
+  cadencePhase    = 'concentric';
+  cadencePhaseEnd = Date.now() + cad.concentric_secs * 1000;
+  playTone(cad.tone_concentric, cad.tone_duration, 0.4);
+  setCadenceLabel('UP');
+
+  cadenceLoop = setInterval(function() {
+    if (!S.running || cadencePhase === 'idle') return;
+    var now = Date.now();
+    var cad = exercise.cadence;
+    if (now >= cadencePhaseEnd) {
+      if (cadencePhase === 'concentric') {
+        if (cad.hold_secs > 0) {
+          cadencePhase    = 'hold';
+          cadencePhaseEnd = now + cad.hold_secs * 1000;
+          playTone(cad.tone_hold, cad.tone_duration, 0.35);
+          setCadenceLabel('HOLD');
+        } else {
+          cadencePhase    = 'eccentric';
+          cadencePhaseEnd = now + cad.eccentric_secs * 1000;
+          playTone(cad.tone_eccentric, cad.tone_duration, 0.4);
+          setCadenceLabel('DOWN');
+        }
+      } else if (cadencePhase === 'hold') {
+        cadencePhase    = 'eccentric';
+        cadencePhaseEnd = now + cad.eccentric_secs * 1000;
+        playTone(cad.tone_eccentric, cad.tone_duration, 0.4);
+        setCadenceLabel('DOWN');
+      } else if (cadencePhase === 'eccentric') {
+        cadencePhase = 'idle';
+        setCadenceLabel('');
+        stopCadence();
+      }
+      return;
+    }
+    // No beat ticks — phase tones are sufficient
+  }, 50);
+}
+
+function stopCadence() {
+  if (cadenceLoop) { clearInterval(cadenceLoop); cadenceLoop = null; }
+  cadencePhase = 'idle';
+  setCadenceLabel('');
+}
+
+function resetCadence() {
+  stopCadence();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATH
+// ═══════════════════════════════════════════════════════════════
+function angleBetween(a, b, c) {
+  var ab = { x: a.x - b.x, y: a.y - b.y };
+  var cb = { x: c.x - b.x, y: c.y - b.y };
+  var dot = ab.x * cb.x + ab.y * cb.y;
+  var mag = Math.sqrt(ab.x*ab.x + ab.y*ab.y) * Math.sqrt(cb.x*cb.x + cb.y*cb.y);
+  if (mag === 0) return 0;
+  return Math.round(Math.acos(Math.max(-1, Math.min(1, dot / mag))) * 180 / Math.PI);
+}
+
+function landmarkVisible(landmarks, name) {
+  var idx = lm(name);
+  return landmarks[idx] && landmarks[idx].visibility > 0.5;
+}
+
+function getLandmark(landmarks, name) {
+  return landmarks[lm(name)];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXERCISE ENGINE — handles both flexion and extension
+// ═══════════════════════════════════════════════════════════════
+function processFrame(landmarks) {
+  if (!S.running) return null;
+  var ex = exercise;
+  var t  = ex.tracking;
+  var sides = {};
+
+  ['left', 'right'].forEach(function(side) {
+    var def = t.landmarks[side];
+    if (landmarkVisible(landmarks, def.proximal) &&
+        landmarkVisible(landmarks, def.joint) &&
+        landmarkVisible(landmarks, def.distal)) {
+      sides[side] = {
+        angle: angleBetween(
+          getLandmark(landmarks, def.proximal),
+          getLandmark(landmarks, def.joint),
+          getLandmark(landmarks, def.distal)
+        ),
+      };
+    }
+  });
+
+  if (!sides.left || !sides.right) return null;
+
+  var lAngle = sides.left.angle;
+  var rAngle = sides.right.angle;
+  S.leftAngle  = lAngle;
+  S.rightAngle = rAngle;
+
+  // Peak tracking — flexion tracks MIN angle, extension tracks MAX angle
+  if (ex.movement_type === 'flexion') {
+    S.leftPeakThisRep  = S.leftPeakThisRep  === null ? lAngle : Math.min(S.leftPeakThisRep,  lAngle);
+    S.rightPeakThisRep = S.rightPeakThisRep === null ? rAngle : Math.min(S.rightPeakThisRep, rAngle);
+  } else {
+    S.leftPeakThisRep  = S.leftPeakThisRep  === null ? lAngle : Math.max(S.leftPeakThisRep,  lAngle);
+    S.rightPeakThisRep = S.rightPeakThisRep === null ? rAngle : Math.max(S.rightPeakThisRep, rAngle);
+  }
+
+  var rep      = ex.rep;
+  var avgAngle = (lAngle + rAngle) / 2;
+  var progress;
+
+  // Phase bar — flexion decreases to peak, extension increases to peak
+  if (ex.movement_type === 'flexion') {
+    progress = Math.max(0, Math.min(100,
+      (rep.bottom_angle - avgAngle) / (rep.bottom_angle - rep.top_angle) * 100
+    ));
+  } else {
+    progress = Math.max(0, Math.min(100,
+      (avgAngle - rep.bottom_angle) / (rep.top_angle - rep.bottom_angle) * 100
+    ));
+  }
+
+  updatePhaseBar(progress, avgAngle);
+  detectRep(lAngle, rAngle, rep, ex.movement_type);
+  evaluateFormRules(ex, lAngle, rAngle);
+
+  return { lAngle: lAngle, rAngle: rAngle };
+}
+
+function updatePhaseBar(progress, avgAngle) {
+  document.getElementById('phase-fill').style.width = Math.round(progress) + '%';
+  document.getElementById('phase-angle').textContent = Math.round(avgAngle) + '°';
+  if (progress > 65) {
+    document.getElementById('phase-name').textContent = 'TOP';
+    document.getElementById('phase-fill').style.background = 'var(--green)';
+  } else if (progress < 15) {
+    document.getElementById('phase-name').textContent = 'BOTTOM';
+    document.getElementById('phase-fill').style.background = 'var(--blue)';
+  } else {
+    document.getElementById('phase-name').textContent = 'MOVING';
+    document.getElementById('phase-fill').style.background = 'var(--text3)';
+  }
+}
+
+function detectRep(lAngle, rAngle, repCfg, movementType) {
+  var atTop, atBottom;
+
+  if (movementType === 'flexion') {
+    // Angle decreases toward top
+    atTop    = lAngle < repCfg.top_angle    + repCfg.top_tolerance &&
+               rAngle < repCfg.top_angle    + repCfg.top_tolerance;
+    atBottom = lAngle > repCfg.bottom_angle - repCfg.bottom_tolerance &&
+               rAngle > repCfg.bottom_angle - repCfg.bottom_tolerance;
+  } else {
+    // Angle increases toward top
+    atTop    = lAngle > repCfg.top_angle    - repCfg.top_tolerance &&
+               rAngle > repCfg.top_angle    - repCfg.top_tolerance;
+    atBottom = lAngle < repCfg.bottom_angle + repCfg.bottom_tolerance &&
+               rAngle < repCfg.bottom_angle + repCfg.bottom_tolerance;
+  }
+
+  if (S.repState === 'down' && atTop) {
+    S.repState = 'up';
+    S.repTimestamps.push(Date.now());
+  } else if (S.repState === 'up' && atBottom) {
+    S.repState = 'down';
+    completeRep();
+  }
+}
+
+function completeRep() {
+  if (S.leftPeakThisRep !== null)  S.leftPeakHistory.push(S.leftPeakThisRep);
+  if (S.rightPeakThisRep !== null) S.rightPeakHistory.push(S.rightPeakThisRep);
+  S.leftPeakThisRep  = null;
+  S.rightPeakThisRep = null;
+
+  checkVelocityFailure();
+
+  S.repCount++;
+  S.totalReps++;
+
+  var el = document.getElementById('rep-number');
+  el.textContent = S.repCount;
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+  document.getElementById('m-reps').textContent = S.repCount;
+
+  speakRep(S.repCount);
+
+  if (S.repCount >= cfg.reps) {
+    setTimeout(function() { speak('Set complete.', true); }, 700);
+    setTimeout(endSet, 1400);
+    return; // don't restart cadence — set is finishing
+  }
+  setTimeout(startCadence, 400);
+}
+
+function checkVelocityFailure() {
+  var ts = S.repTimestamps;
+  if (ts.length < 2) return;
+  var durations = [];
+  for (var i = 1; i < ts.length; i++) { durations.push(ts[i] - ts[i-1]); }
+  if (durations.length === 3) {
+    S.baselineVelocity = (durations[0] + durations[1] + durations[2]) / 3;
+  }
+  if (!S.baselineVelocity) return;
+  var latest   = durations[durations.length - 1];
+  var threshold = exercise.rep.velocity_failure_threshold_pct / 100;
+  var slowdown  = (latest - S.baselineVelocity) / S.baselineVelocity;
+  document.getElementById('velocity-badge').textContent = (Math.round(latest / 100) / 10) + 's/rep';
+  if (slowdown > threshold) {
+    S.failureAlerts++;
+    showFormAlert('Slowing down — ' + Math.round(slowdown * 100) + '% slower', 'failure');
+    speak('Slowing down. Consider ending set.', true);
+  }
+}
+
+// ─── FORM RULES ENGINE ────────────────────────────────────────
+function evaluateFormRules(ex, lAngle, rAngle) {
+  var now = Date.now();
+  ex.form_rules.forEach(function(rule) {
+    if (S.formCooldowns[rule.id] && now < S.formCooldowns[rule.id]) return;
+    if (rule.type === 'bilateral_peak_diff') evaluateBilateralDiff(rule, ex, now);
+    else if (rule.type === 'angle_floor')   evaluateAngleFloor(rule, lAngle, rAngle, now);
+    else if (rule.type === 'angle_ceiling') evaluateAngleCeiling(rule, lAngle, rAngle, now);
+  });
+}
+
+function evaluateBilateralDiff(rule, ex, now) {
+  if (S.leftPeakHistory.length === 0) return;
+  var lRecent = S.leftPeakHistory.slice(-3);
+  var rRecent = S.rightPeakHistory.slice(-3);
+
+  var lPeak, rPeak, lFlex, rFlex;
+
+  if (ex.movement_type === 'flexion') {
+    // Most flexion = lowest angle
+    lPeak = Math.min.apply(null, lRecent);
+    rPeak = Math.min.apply(null, rRecent);
+    lFlex = Math.max(0, ex.rep.bottom_angle - lPeak);
+    rFlex = Math.max(0, ex.rep.bottom_angle - rPeak);
+  } else {
+    // Most extension = highest angle
+    lPeak = Math.max.apply(null, lRecent);
+    rPeak = Math.max.apply(null, rRecent);
+    lFlex = Math.max(0, lPeak - ex.rep.bottom_angle);
+    rFlex = Math.max(0, rPeak - ex.rep.bottom_angle);
+  }
+
+  var maxFlex = Math.max(lFlex, rFlex, 1);
+  var lPct    = Math.round(lFlex / maxFlex * 100);
+  var rPct    = Math.round(rFlex / maxFlex * 100);
+  var diff    = Math.abs(lPct - rPct);
+  var lagging = lPct < rPct ? 'left' : (rPct < lPct ? 'right' : null);
+
+  updateAsymUI(lPct, rPct, diff, lagging);
+  S.asymHistory.push(diff);
+
+  if (diff > rule.threshold_pct && lagging) {
+    var cue = rule.cue.replace('{lagging_side}', lagging);
+    showFormAlert(lagging.toUpperCase() + ' side lagging — ' + diff + '% difference', 'asym');
+    speak(cue);
+    S.lagCount++;
+    S.formCooldowns[rule.id] = now + 4000;
+  } else {
+    clearFormAlert();
+  }
+}
+
+function evaluateAngleFloor(rule, lAngle, rAngle, now) {
+  // Angle is too LOW — e.g. not returning to full extension
+  if (S.repState !== 'down') return;
+  if (lAngle < rule.min_angle || rAngle < rule.min_angle) {
+    showFormAlert(rule.cue, 'asym');
+    speak(rule.cue);
+    S.formCooldowns[rule.id] = now + 5000;
+  }
+}
+
+function evaluateAngleCeiling(rule, lAngle, rAngle, now) {
+  // Angle is too HIGH while descending — e.g. not going deep enough on squat
+  // Check during the descending phase (repState === 'up' means they've left the top and are going down)
+  if (S.repState !== 'up') return;
+  if (lAngle > rule.max_angle || rAngle > rule.max_angle) {
+    showFormAlert(rule.cue, 'asym');
+    speak(rule.cue);
+    S.formCooldowns[rule.id] = now + 5000;
+  }
+}
+
+// ─── ALERT UI ─────────────────────────────────────────────────
+var alertClearTimer = null;
+
+function showFormAlert(msg, type) {
+  var el = document.getElementById('form-alert');
+  el.textContent = msg;
+  el.className   = type;
+  clearTimeout(alertClearTimer);
+  alertClearTimer = setTimeout(clearFormAlert, 3500);
+}
+
+function clearFormAlert() {
+  document.getElementById('form-alert').className = 'hidden';
+}
+
+function updateAsymUI(lPct, rPct, diff, lagging) {
+  document.getElementById('bar-left').style.width  = lPct + '%';
+  document.getElementById('bar-right').style.width = rPct + '%';
+  document.getElementById('pct-left').textContent  = lPct + '%';
+  document.getElementById('pct-right').textContent = rPct + '%';
+  document.getElementById('bar-left').className    = 'asym-bar' + (lagging === 'left'  ? ' lag' : '');
+  document.getElementById('bar-right').className   = 'asym-bar' + (lagging === 'right' ? ' lag' : '');
+  var asymEl = document.getElementById('m-asym');
+  asymEl.textContent = diff + '%';
+  asymEl.className   = diff > 15 ? 'metric-val amber' : (diff < 5 ? 'metric-val green' : 'metric-val');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VOICE COMMAND ENGINE
+// ═══════════════════════════════════════════════════════════════
+var VOICE_COMMANDS = [
+  { phrases: ['next set','set done','done','end set','finish set','set complete'], confirm: 'Ending set.',      action: function() { endSet(); },       context: ['lifting'] },
+  { phrases: ['skip rest','go','next','skip'],                                     confirm: 'Skipping rest.',   action: function() { startNextSet(); }, context: ['resting'] },
+  { phrases: ['pause','stop'],                                                     confirm: 'Paused.',          action: function() { S.running = false; voiceContext = 'paused'; stopCadence(); document.getElementById('phase-name').textContent = 'PAUSED'; }, context: ['lifting'] },
+  { phrases: ['resume','continue','unpause'],                                      confirm: 'Resuming.',        action: function() { S.running = true;  voiceContext = 'lifting'; startCadence(); }, context: ['paused'] },
+  { phrases: ['failure','muscle failure','failed'],                                confirm: 'Failure logged.',  action: function() { S.failureAlerts++; showFormAlert('Failure logged — consider ending set', 'failure'); }, context: ['lifting'] },
+  { phrases: ['end session','finish session','done session'],                      confirm: 'Ending session.',  action: function() { S.running = false; stopCadence(); showDone(); }, context: ['lifting','resting'] },
+];
+
+var recognition    = null;
+var voiceContext   = 'lifting';
+var commandPending = false;
+var transcriptTimer = null;
+
+function initVoice() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { console.warn('SpeechRecognition not supported.'); return; }
+  recognition = new SR();
+  recognition.continuous     = true;
+  recognition.interimResults = true;
+  recognition.lang           = 'en-US';
+  recognition.maxAlternatives = 3;
+
+  recognition.onstart  = function() { setVoiceStatus('listening'); };
+  recognition.onerror  = function(e) { if (e.error !== 'no-speech' && e.error !== 'aborted') console.warn('Voice:', e.error); };
+  recognition.onend    = function() {
+    if (document.getElementById('done-screen').classList.contains('visible')) return;
+    if (document.getElementById('start-screen').style.display !== 'none') return;
+    try { recognition.start(); } catch(e) {}
+  };
+
+  recognition.onresult = function(event) {
+    if (commandPending) return;
+    var finalText = ''; var interimText = '';
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      var t = event.results[i][0].transcript.trim().toLowerCase();
+      if (event.results[i].isFinal) { finalText += t; } else { interimText += t; }
+    }
+    if (interimText) showTranscript(interimText);
+    if (finalText)   { showTranscript(finalText); matchCommand(finalText); }
+  };
+
+  recognition.start();
+  document.getElementById('voice-hud').classList.add('active');
+}
+
+function matchCommand(transcript) {
+  var active = VOICE_COMMANDS.filter(function(cmd) { return cmd.context.indexOf(voiceContext) !== -1; });
+  for (var i = 0; i < active.length; i++) {
+    for (var j = 0; j < active[i].phrases.length; j++) {
+      if (transcript.indexOf(active[i].phrases[j]) !== -1) { triggerCommand(active[i]); return; }
+    }
+  }
+  clearTimeout(transcriptTimer);
+  transcriptTimer = setTimeout(clearTranscript, 2000);
+}
+
+function triggerCommand(cmd) {
+  commandPending = true;
+  setVoiceStatus('heard');
+  showConfirm(cmd.confirm);
+  clearTranscript();
+  synth.cancel();
+  var u = new SpeechSynthesisUtterance(cmd.confirm);
+  u.rate = 1.1; u.pitch = 0.9; u.volume = 1.0;
+  u.onend = function() {
+    cmd.action();
+    commandPending = false;
+    setTimeout(function() { clearConfirm(); setVoiceStatus('listening'); }, 800);
+  };
+  synth.speak(u);
+}
+
+function setVoiceStatus(state) {
+  var el = document.getElementById('voice-status');
+  var lb = document.getElementById('voice-status-label');
+  el.className = state;
+  lb.textContent = state === 'heard' ? 'HEARD' : 'LISTENING';
+}
+function showTranscript(text) {
+  var el = document.getElementById('voice-transcript');
+  el.textContent = '"' + text + '"';
+  el.classList.add('visible');
+  clearTimeout(transcriptTimer);
+  transcriptTimer = setTimeout(clearTranscript, 2500);
+}
+function clearTranscript() { document.getElementById('voice-transcript').classList.remove('visible'); }
+function showConfirm(text) { var el = document.getElementById('voice-confirm'); el.textContent = text; el.classList.add('visible'); }
+function clearConfirm()    { document.getElementById('voice-confirm').classList.remove('visible'); }
+
+// ═══════════════════════════════════════════════════════════════
+// SET / REST / SESSION MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function endSet() {
+  if (!S.running) return;
+  S.running = false;
+  stopCadence();
+  clearFormAlert();
+  if (S.currentSet >= cfg.sets) { showDone(); } else { showRest(); }
+}
+
+function showRest() {
+  document.getElementById('rest-screen').classList.add('visible');
+  var remaining = cfg.rest;
+  document.getElementById('rest-timer').textContent = remaining;
+  document.getElementById('rest-next-info').textContent =
+    'SET ' + (S.currentSet + 1) + ' OF ' + cfg.sets + '  ·  ' + cfg.weight + ' LBS  ·  ' + cfg.reps + ' REPS';
+  speak('Rest. ' + cfg.rest + ' seconds.', true);
+  voiceContext = 'resting';
+  S.restInterval = setInterval(function() {
+    remaining--;
+    document.getElementById('rest-timer').textContent = remaining;
+    if (remaining <= 3 && remaining > 0) speak(String(remaining), true);
+    if (remaining <= 0) { clearInterval(S.restInterval); speak('Go.', true); setTimeout(startNextSet, 500); }
+  }, 1000);
+}
+
+function startNextSet() {
+  clearInterval(S.restInterval);
+  document.getElementById('rest-screen').classList.remove('visible');
+  S.currentSet++;
+  S.repCount = 0; S.repState = 'down';
+  S.leftPeakHistory = []; S.rightPeakHistory = [];
+  S.leftPeakThisRep = null; S.rightPeakThisRep = null;
+  S.repTimestamps = []; S.baselineVelocity = null;
+  S.formCooldowns = {}; S.running = true;
+  voiceContext = 'lifting';
+  document.getElementById('rep-number').textContent   = '0';
+  document.getElementById('m-reps').textContent       = '0';
+  document.getElementById('m-set').textContent        = S.currentSet + ' / ' + cfg.sets;
+  document.getElementById('hud-set-label').textContent = 'SET ' + S.currentSet;
+  clearFormAlert();
+  speak('Set ' + S.currentSet + '. ' + exercise.voice.start_cue, true);
+  setTimeout(startCadence, 1200);
+}
+
+function showDone() {
+  var avgAsym = S.asymHistory.length
+    ? Math.round(S.asymHistory.reduce(function(a,b){return a+b;},0) / S.asymHistory.length)
+    : 0;
+  var prog       = exercise.progression;
+  var hitTarget  = (S.totalReps / cfg.sets) >= prog.trigger_reps;
+  var nextWeight = hitTarget ? cfg.weight + prog.increment_lbs : cfg.weight;
+  var nextLabel  = hitTarget ? nextWeight + ' LBS (+' + prog.increment_lbs + ')' : cfg.weight + ' LBS (hold)';
+
+  document.getElementById('done-sub-label').textContent   = exercise.name.toUpperCase() + ' · ' + S.currentSet + ' SETS';
+  document.getElementById('done-total-reps').textContent  = S.totalReps;
+  document.getElementById('done-asym').textContent        = avgAsym + '%';
+  document.getElementById('done-weight').textContent      = cfg.weight + ' LBS';
+  document.getElementById('done-failure').textContent     = S.failureAlerts > 0 ? S.failureAlerts + ' alert' + (S.failureAlerts > 1 ? 's' : '') : 'None';
+  document.getElementById('done-failure').className       = S.failureAlerts > 2 ? 'done-stat-val red' : 'done-stat-val green';
+  document.getElementById('done-next').textContent        = nextLabel;
+  document.getElementById('done-screen').classList.add('visible');
+  speak('Session complete. ' + S.totalReps + ' total reps.', true);
+}
+
+function resetApp() {
+  document.getElementById('done-screen').classList.remove('visible');
+  document.getElementById('voice-hud').classList.remove('active');
+  document.getElementById('start-screen').style.display = 'flex';
+  var mediapipeReady = S.mediapipeReady;
+  S = freshState();
+  S.mediapipeReady = mediapipeReady;
+  voiceContext = 'lifting'; commandPending = false;
+  resetCadence();
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SESSION START
+// ═══════════════════════════════════════════════════════════════
+function startSession() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('hud-set-label').textContent    = 'SET 1';
+  document.getElementById('hud-weight-label').textContent = cfg.weight + ' LBS';
+  document.getElementById('m-set').textContent            = '1 / ' + cfg.sets;
+  document.getElementById('camera-hint').textContent      = exercise.camera_hint;
+
+  var mediapipeReady = S.mediapipeReady;
+  S = freshState();
+  S.mediapipeReady = mediapipeReady;
+  S.running    = true;
+  voiceContext = 'lifting';
+
+  synth.speak(new SpeechSynthesisUtterance(''));
+  initAudio();
+  setTimeout(function() {
+    speak('Set 1. ' + exercise.voice.start_cue, true);
+    setTimeout(startCadence, 1200);
+  }, 400);
+
+  if (!S.mediapipeReady) initCamera();
+  if (!recognition)      initVoice();
+}  // <-- startSession closes here
+
+// ═══════════════════════════════════════════════════════════════
+// MEDIAPIPE + CANVAS RENDERER
+// ═══════════════════════════════════════════════════════════════
+function initCamera() {
+  var video  = document.getElementById('video');
+  var canvas = document.getElementById('overlay');
+  var ctx    = canvas.getContext('2d');
+
+  var pose = new Pose({
+    locateFile: function(file) { return 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/' + file; }
+  });
+  pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+
+  pose.onResults(function(results) {
+    canvas.width  = video.videoWidth  || canvas.offsetWidth;
+    canvas.height = video.videoHeight || canvas.offsetHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!results.poseLandmarks) return;
+    var landmarks = results.poseLandmarks;
+    var ex = exercise;
+    var t  = ex.tracking.landmarks;
+
+    var pairs = [
+      [t.left.proximal,  t.left.joint  ],
+      [t.left.joint,     t.left.distal ],
+      [t.right.proximal, t.right.joint ],
+      [t.right.joint,    t.right.distal],
+      [t.left.proximal,  t.right.proximal],
+    ];
+
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(29,185,84,0.55)';
+    pairs.forEach(function(pair) {
+      if (landmarkVisible(landmarks, pair[0]) && landmarkVisible(landmarks, pair[1])) {
+        var pa = getLandmark(landmarks, pair[0]);
+        var pb = getLandmark(landmarks, pair[1]);
+        ctx.beginPath();
+        ctx.moveTo(pa.x * canvas.width, pa.y * canvas.height);
+        ctx.lineTo(pb.x * canvas.width, pb.y * canvas.height);
+        ctx.stroke();
+      }
+    });
+
+    [t.left.proximal, t.left.joint, t.left.distal, t.right.proximal, t.right.joint, t.right.distal].forEach(function(name) {
+      if (!landmarkVisible(landmarks, name)) return;
+      var p = getLandmark(landmarks, name);
+      var isJoint = name === t.left.joint || name === t.right.joint;
+      ctx.beginPath();
+      ctx.arc(p.x * canvas.width, p.y * canvas.height, isJoint ? 6 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = isJoint ? 'rgba(245,166,35,0.9)' : 'rgba(29,185,84,0.85)';
+      ctx.fill();
+    });
+
+    ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+    var result = processFrame(landmarks);
+    if (result) {
+      var lj = getLandmark(landmarks, t.left.joint);
+      var rj = getLandmark(landmarks, t.right.joint);
+      if (lj) ctx.fillText(result.lAngle + '°', lj.x * canvas.width, lj.y * canvas.height - 12);
+      if (rj) ctx.fillText(result.rAngle + '°', rj.x * canvas.width, rj.y * canvas.height - 12);
+    }
+  });
+
+  var camera = new Camera(video, {
+    onFrame: async function() { await pose.send({ image: video }); },
+    width: 640, height: 480,
+  });
+  camera.start().catch(function() {
+    alert('Camera access required. Please allow camera permissions and reload.');
+  });
+  S.mediapipeReady = true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+buildExercisePicker();
+</script>
+</body>
+</html>
