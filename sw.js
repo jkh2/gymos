@@ -1,8 +1,8 @@
-/* GymOS service worker — makes the app work offline after the first visit.
+/* Sentinel Spotter service worker — makes the app work offline after the first visit.
  * App files: network first, so updates arrive as soon as you're online.
  * Pinned libraries, pose models and fonts: cache first, they never change. */
-var APP = 'gymos-app-v5.0';
-var LIB = 'gymos-lib-v1';
+var APP = 'spotter-app-v5.1';
+var LIB = 'gymos-lib-v1'; // unchanged on purpose: keeps already-downloaded pose models
 var SHELL = ['./', 'index.html', 'engine.js', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'];
 var LIB_HOSTS = ['cdn.jsdelivr.net', 'storage.googleapis.com', 'fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com'];
 

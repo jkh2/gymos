@@ -1,8 +1,10 @@
-# GymOS
+# Sentinel Spotter
 
-**Your phone is your spotter.** Prop it up, lift, and GymOS counts every rep out loud, catches a lagging side, and tells you when the bar is slowing down, so you can stop counting and focus on the muscle.
+*Formerly GymOS.*
 
-**[Open GymOS →](https://jameskeithharwood.com/gymos/)** · free · runs in the browser · no account · [watch the 40-second demo](https://jameskeithharwood.com/gymos/?demo)
+**The spotter in your phone.** Prop it up, lift, and it counts every rep out loud, catches a lagging side, and tells you when the bar is slowing down, so you can stop counting and focus on the muscle.
+
+**[Open Sentinel Spotter →](https://jameskeithharwood.com/gymos/)** · free · runs in the browser · no account · [watch the 40-second demo](https://jameskeithharwood.com/gymos/?demo)
 
 <p>
 <img src="docs/live.png" width="200" alt="Live set: giant rep count, speed bars turning yellow and red as the lifter slows, and a 'Grinding. Last rep.' alert">
@@ -17,24 +19,24 @@
 
 When you lift with a training partner, something changes. You stop counting. You stop monitoring yourself. You zone out and just move the weight. That mental offloading isn't a comfort feature. Focusing on the muscle beats focusing on counting, the clock, or the mirror.
 
-Every other fitness app pulls you *into* your screen during a set. GymOS pushes the screen into your peripheral vision. The voice handles everything, including the commands, so you never have to touch the phone.
+Every other fitness app pulls you *into* your screen during a set. Sentinel Spotter pushes the screen into your peripheral vision. The voice handles everything, including the commands, so you never have to touch the phone.
 
-GymOS began as an answer to a friend who was tired of workout apps that need your attention mid-set.
+Sentinel Spotter began as an answer to a friend who was tired of workout apps that need your attention mid-set.
 
 ## What it does
 
 | | |
 |---|---|
 | **Counts every rep out loud** | A rep only counts when you get back to where you started after reaching full range. Half reps are flagged as partials and not counted. On squats and bench, the rep counts when you stand or lock out, so a rep you get stuck on is never counted. |
-| **Tells you when you're slowing down** | GymOS times the lifting part of every rep. When it slows by 30% from your best rep, you hear *"Slowing down. A couple left."* At 45%: *"Grinding. Last rep."* Speed loss is a standard fatigue signal in strength training. |
+| **Tells you when you're slowing down** | Spotter times the lifting part of every rep. When it slows by 30% from your best rep, you hear *"Slowing down. A couple left."* At 45%: *"Grinding. Last rep."* Speed loss is a standard fatigue signal in strength training. |
 | **Calls out a lagging side** | Facing the camera, it tracks both arms separately and tells you *"Left arm is lagging"* when one side falls short. |
 | **Catches stalls** | If the weight stops moving mid-rep you hear *"Drive!"* If it stays stuck: *"Rack it. Safety first."* |
-| **Learns how you move** | Two slow warm-up reps teach GymOS your personal range of motion and your camera angle, instead of guessing from fixed angles. |
+| **Learns how you move** | Two slow warm-up reps teach Spotter your personal range of motion and your camera angle, instead of guessing from fixed angles. |
 | **Coaches tempo** | Drop the weight too fast twice in a row and it says *"Control the way down."* |
 | **Runs the whole session** | Ends the set when you rest or step away, runs the rest timer, counts you into the next set. |
-| **Hands-free** | Say "end set", "pause", "resume", "skip", "more time", "end workout". GymOS ignores its own voice so it never triggers itself. |
+| **Hands-free** | Say "end set", "pause", "resume", "skip", "more time", "end workout". Spotter ignores its own voice so it never triggers itself. |
 | **Remembers and progresses** | History is saved on your phone. The next session's weight is recommended from how your last one went: every set hit with speed to spare means go up, a grind means repeat, two rough sessions mean back off. |
-| **Machine QR codes** | Make a printable QR code for any machine. Scanning it opens GymOS with that exercise and plan ready to go. |
+| **Machine QR codes** | Make a printable QR code for any machine. Scanning it opens Sentinel Spotter with that exercise and plan ready to go. |
 | **Shareable results** | One tap makes a branded image of your workout's speed chart for social media. |
 | **Installs like an app, works offline** | Add it to your home screen. After the first visit, it works with no signal. |
 
@@ -71,7 +73,7 @@ One honest caveat: voice commands use your browser's built-in speech recognition
 
 ## Safety
 
-GymOS is not a substitute for a human spotter or safety bars on heavy barbell lifts. Its stall alert tells you to rack the weight. It cannot catch it.
+Sentinel Spotter is not a substitute for a human spotter or safety bars on heavy barbell lifts. Its stall alert tells you to rack the weight. It cannot catch it.
 
 ## Running and testing
 
@@ -91,7 +93,7 @@ The camera needs HTTPS (or localhost). GitHub Pages serves it over HTTPS.
 
 * 6–8 feet away, phone propped at about hip height. A water bottle, gym bag or bench works.
 * Face-on exercises: both arms fully in frame. Side-on exercises: the joints listed on the setup screen.
-* Good light helps. The position check turns each joint chip green when GymOS can see it.
+* Good light helps. The position check turns each joint chip green when Spotter can see it.
 * The **Accurate** tracking setting is better for side-on lifts and uses more battery.
 
 ## Roadmap
@@ -109,6 +111,7 @@ The camera needs HTTPS (or localhost). GitHub Pages serves it over HTTPS.
 
 | Version | What it was | Try it |
 |---|---|---|
+| **v5.1** (Oct 2026) | Renamed from GymOS to Sentinel Spotter |  |
 | **v5** (Oct 2026) | Phone spotter rebuild: speed-loss fatigue alerts, calibration, 16 exercises, history, QR codes, offline | [current](https://jameskeithharwood.com/gymos/) |
 | v4 (May 2026) | Seven-exercise schema, flexion/extension movement types, exercise picker | [archived](https://jameskeithharwood.com/gymos/legacy/v4.html) |
 | v3 (May 2026) | First MVP: curl rep counting, voice commands, rest timer | [archived](https://jameskeithharwood.com/gymos/legacy/v3.html) |

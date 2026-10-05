@@ -1,5 +1,5 @@
 /*
- * GymOS engine — pure rep-tracking logic. No DOM, no camera.
+ * Sentinel Spotter engine (formerly GymOS) — pure rep-tracking logic. No DOM, no camera.
  * Runs in the browser (window.GymEngine) and in Node (module.exports) so
  * every rule here is covered by tests/engine.test.js.
  *

@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GymOS — your phone is your spotter</title>
-<meta name="description" content="GymOS watches your set through your phone camera, counts every rep out loud, catches lagging sides and tells you when the bar is slowing down. Free, private, no account.">
+<title>Sentinel Spotter — the spotter in your phone</title>
+<meta name="description" content="Sentinel Spotter watches your set through your phone camera, counts every rep out loud, catches lagging sides and tells you when the bar is slowing down. Free, private, no account.">
 <meta name="theme-color" content="#1E2227">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="GymOS">
-<meta property="og:title" content="GymOS — your phone is your spotter">
+<meta name="apple-mobile-web-app-title" content="Spotter">
+<meta property="og:title" content="Sentinel Spotter — the spotter in your phone">
 <meta property="og:description" content="Counts your reps out loud, flags a lagging side, and tells you when you're slowing down. Prop your phone and lift.">
 <meta property="og:image" content="https://jameskeithharwood.com/gymos/icons/og.png">
 <link rel="manifest" href="manifest.json">
@@ -52,7 +52,8 @@
   .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--safe-t) + 20px) 20px calc(var(--safe-b) + 24px); }
 
   /* Shared type */
-  .wordmark { font-family: var(--display); font-weight: 900; font-size: 44px; line-height: 0.9; letter-spacing: 0.01em; }
+  .wordmark { font-family: var(--display); font-weight: 900; font-size: 52px; line-height: 0.86; letter-spacing: 0.01em; }
+  .wm-top { display: block; font-size: 21px; font-weight: 800; line-height: 1; color: var(--chalk2); letter-spacing: 0.04em; margin-bottom: 1px; }
   .h2 { font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1; }
   .muted { color: var(--chalk2); }
   .faint { color: var(--chalk3); }
@@ -308,13 +309,13 @@
   <section id="home" class="screen active" aria-label="Home">
     <div class="scroll">
       <div class="top">
-        <div class="wordmark">GymOS</div>
+        <div class="wordmark"><span class="wm-top">Sentinel</span>Spotter</div>
         <div style="display:flex">
           <button class="icon-btn" data-go="history" aria-label="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></button>
           <button class="icon-btn" data-go="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
         </div>
       </div>
-      <p class="lede">Prop your phone and lift. GymOS counts every rep out loud, catches a lagging side, and tells you when the bar starts slowing down.</p>
+      <p class="lede">Prop your phone and lift. It counts every rep out loud, catches a lagging side, and tells you when the bar starts slowing down.</p>
       <button class="demo-strip" id="demo-btn">
         <span class="play"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg></span>
         <span><b>Watch it work</b><span>A 40-second demo set. No camera needed.</span></span>
@@ -426,7 +427,7 @@
       <div class="h2">Machine QR code</div>
     </div>
     <div class="sheet-body">
-      <p class="muted small" style="margin-bottom:10px">Print this and tape it to the machine. Anyone who scans it opens GymOS with this exercise and these numbers ready to go.</p>
+      <p class="muted small" style="margin-bottom:10px">Print this and tape it to the machine. Anyone who scans it opens Sentinel Spotter with this exercise and these numbers ready to go.</p>
       <div id="qr-card"><div class="qn" id="qr-name"></div><div class="qp" id="qr-plan"></div><div id="qr-img"></div><div class="qf">Scan with your phone camera · Free · No account</div></div>
       <div id="qr-link"></div>
       <div class="setup-actions" style="margin-top:0">
@@ -451,14 +452,14 @@
   <div id="toast" role="status"></div>
 </div>
 
-<noscript><p style="padding:24px">GymOS needs JavaScript to run.</p></noscript>
+<noscript><p style="padding:24px">Sentinel Spotter needs JavaScript to run.</p></noscript>
 
 <script src="engine.js"></script>
 <script>
 'use strict';
 (function () {
 var G = window.GymEngine;
-var VERSION = '5.0';
+var VERSION = '5.1';
 var MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1';
 var MODELS = {
   fast: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
@@ -470,7 +471,7 @@ function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '
 // ═══════════════════════════════════════════════════════════════
 // STORAGE
 // ═══════════════════════════════════════════════════════════════
-var KEY = 'gymos.v5';
+var KEY = 'gymos.v5'; // kept from the GymOS name so existing history carries over
 var DEFAULT_SETTINGS = {
   units: 'lb', voice: true, countAloud: true, cues: true, fatigue: 'standard', tempo: true,
   voiceCmds: true, chime: false, autoEnd: true, camera: 'user', model: 'fast', voiceName: ''
@@ -776,7 +777,7 @@ function renderSteppers() {
   var ex = W.ex, p = W.plan, u = ST.units;
   var rows = [
     ['sets', 'Sets', '', 1, 1, 10],
-    ['reps', 'Target reps', 'GymOS keeps counting if you go past it', 1, 1, 50]
+    ['reps', 'Target reps', 'It keeps counting if you go past it', 1, 1, 50]
   ];
   if (!ex.bodyweight) rows.push(['weight', 'Weight', '', ex.inc[u] || 1, 0, 1500]);
   rows.push(['rest', 'Rest', '', 15, 15, 600]);
@@ -799,7 +800,7 @@ function renderSteppers() {
 function renderCalLine() {
   var c = DB.calib[W.ex.id];
   if (W.calibrate) {
-    $('cal-status').innerHTML = c ? 'GymOS will re-learn your range first.' : 'Before set 1, two slow warm-up reps teach GymOS your range of motion.';
+    $('cal-status').innerHTML = c ? 'Spotter will re-learn your range first.' : 'Before set 1, two slow warm-up reps teach Spotter your range of motion.';
     $('cal-toggle').textContent = c ? 'Keep current' : 'Skip';
   } else {
     $('cal-status').innerHTML = c ? 'Your range is learned (' + rangeText(W.ex, c) + ').' : 'Using the standard range of motion.';
@@ -845,8 +846,8 @@ function beginWorkout(demo) {
     var cam = e && (e.name === 'NotAllowedError' || e.name === 'NotFoundError' || e.name === 'OverconstrainedError');
     stopWorkout();
     confirmBox(cam ? 'Camera unavailable' : 'Could not load the pose model',
-      cam ? 'GymOS needs your camera to see your reps. Allow camera access for this site in your browser settings, then try again.'
-          : 'Check your connection and try again. Once it loads one time, GymOS works offline.',
+      cam ? 'Spotter needs your camera to see your reps. Allow camera access for this site in your browser settings, then try again.'
+          : 'Check your connection and try again. Once it loads one time, Spotter works offline.',
       'Try the demo', function () { startDemoWorkout(); });
     show('setup');
   });
@@ -913,7 +914,7 @@ function enterCalibrate() {
   setControls('calibrate');
   W.calibrator = G.createCalibrator(W.ex);
   W.calDots = 0;
-  renderGuide('Two slow warm-up reps', 'Full range, nice and slow. These two don\'t count. They teach GymOS how you move.', null, 0);
+  renderGuide('Two slow warm-up reps', 'Full range, nice and slow. These two don\'t count. They teach Spotter how you move.', null, 0);
   Voice.say('Give me two slow warm up reps. Full range.', 1);
 }
 function onCalibrateFrame(f) {
@@ -1206,7 +1207,7 @@ function trackedIdx() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DEMO — a simulated lifter so anyone can see GymOS work
+// DEMO — a simulated lifter so anyone can see Spotter work
 // ═══════════════════════════════════════════════════════════════
 function startDemoWorkout() {
   W.ex = G.byId('curl'); W.plan = { sets: 1, reps: 10, weight: 30, rest: 60 };
@@ -1321,12 +1322,12 @@ function shareCard(s, demo) {
     c.fillStyle = '#A9AFB6'; c.font = '500 34px Archivo, sans-serif';
     c.fillText('Bar height = speed. Watch the fatigue set in.', 80, H2 - 230);
     c.fillStyle = '#EEEAE2'; c.font = '900 72px "Big Shoulders Display", sans-serif';
-    c.fillText('GymOS', 80, H2 - 160);
+    c.fillText('Sentinel Spotter', 80, H2 - 160);
     c.fillStyle = '#A9AFB6'; c.font = '500 34px Archivo, sans-serif';
     c.fillText('Counted by my phone · jameskeithharwood.com/gymos', 80, H2 - 76);
     cv.toBlob(function (blob) {
       var file = new File([blob], 'gymos-' + ex.id + '.png', { type: 'image/png' });
-      var text = (demo ? 'GymOS demo: ' : 'Just did ') + ex.name + (ex.bodyweight ? '' : ' at ' + fmtW(s.weight, s.unit)) + ', ' + s.totalReps + ' reps. My phone counted every one.';
+      var text = (demo ? 'Sentinel Spotter demo: ' : 'Just did ') + ex.name + (ex.bodyweight ? '' : ' at ' + fmtW(s.weight, s.unit)) + ', ' + s.totalReps + ' reps. My phone counted every one.';
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({ files: [file], text: text, url: location.origin + location.pathname }).catch(function () {});
       } else {
@@ -1409,7 +1410,7 @@ function renderSettings() {
   html += '<div class="settings-h">Your data</div>';
   html += '<div class="set-row"><div><div class="t">Learned ranges</div><div class="d">' + Object.keys(DB.calib).length + ' exercise' + (Object.keys(DB.calib).length === 1 ? '' : 's') + '</div></div><button class="btn btn-ghost" style="min-height:40px;font-size:14px" id="reset-cal">Reset</button></div>';
   html += '<div class="set-row"><div><div class="t">Workout history</div><div class="d">' + DB.sessions.length + ' workout' + (DB.sessions.length === 1 ? '' : 's') + ' on this phone</div></div><button class="btn btn-red" style="min-height:40px;font-size:14px" id="wipe">Delete all</button></div>';
-  html += '<div class="about"><p>GymOS ' + VERSION + '. Pose tracking runs on your phone with Google MediaPipe. Video is never recorded or uploaded.</p><p>GymOS is not a substitute for a human spotter on heavy barbell lifts. Use safety bars.</p><p>Built by James Keith Harwood II · <a href="https://jameskeithharwood.com" target="_blank" rel="noopener">jameskeithharwood.com</a></p><p><button class="link" id="replay-ob" style="color:var(--blue);font-weight:600">Replay the intro</button></p></div>';
+  html += '<div class="about"><p>Sentinel Spotter ' + VERSION + ', formerly GymOS. Pose tracking runs on your phone with Google MediaPipe. Video is never recorded or uploaded.</p><p>Sentinel Spotter is not a substitute for a human spotter on heavy barbell lifts. Use safety bars.</p><p>Built by James Keith Harwood II · <a href="https://jameskeithharwood.com" target="_blank" rel="noopener">jameskeithharwood.com</a></p><p><button class="link" id="replay-ob" style="color:var(--blue);font-weight:600">Replay the intro</button></p></div>';
   $('settings-body').innerHTML = html;
   $('settings-body').querySelectorAll('.switch').forEach(function (b) { b.onclick = function () { ST[b.dataset.key] = !ST[b.dataset.key]; save(); b.setAttribute('aria-checked', ST[b.dataset.key]); }; });
   $('settings-body').querySelectorAll('.seg').forEach(function (s) {
@@ -1423,7 +1424,7 @@ function renderSettings() {
     });
   });
   var vs = $('voice-sel'); if (vs) vs.onchange = function () { ST.voiceName = vs.value; save(); Voice.repick(); Voice.unlock(); Voice.say('This is my voice.', 0); };
-  $('reset-cal').onclick = function () { confirmBox('Reset learned ranges?', 'GymOS will ask for two warm-up reps next time you do each exercise.', 'Reset', function () { DB.calib = {}; save(); renderSettings(); toast('Ranges reset.'); }); };
+  $('reset-cal').onclick = function () { confirmBox('Reset learned ranges?', 'Spotter will ask for two warm-up reps next time you do each exercise.', 'Reset', function () { DB.calib = {}; save(); renderSettings(); toast('Ranges reset.'); }); };
   $('wipe').onclick = function () { confirmBox('Delete all history?', 'This removes every workout saved on this phone. It cannot be undone.', 'Delete', function () { DB.sessions = []; DB.plans = {}; save(); renderSettings(); toast('History deleted.'); }); };
   $('replay-ob').onclick = function () { startOnboard(); };
 }
@@ -1460,7 +1461,7 @@ $('qr-btn').onclick = function () {
 $('qr-print').onclick = function () { window.print(); };
 $('qr-share').onclick = function () {
   var url = planUrl();
-  if (navigator.share) navigator.share({ title: 'GymOS · ' + W.ex.name, url: url }).catch(function () {});
+  if (navigator.share) navigator.share({ title: 'Sentinel Spotter · ' + W.ex.name, url: url }).catch(function () {});
   else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast('Link copied.'); });
 };
 
@@ -1472,7 +1473,7 @@ var OB = [
     art: '<svg viewBox="0 0 300 220" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="196" x2="290" y2="196" stroke="#323941" stroke-width="4"/><rect x="34" y="120" width="40" height="72" rx="7" stroke="#EEEAE2" stroke-width="4" transform="rotate(-12 54 156)"/><rect x="80" y="150" width="22" height="46" rx="6" stroke="#6E767F" stroke-width="4"/><path d="M118 156 L170 120 M118 172 L190 156" stroke="#3D7BD9" stroke-width="3" stroke-dasharray="6 7"/><circle cx="222" cy="52" r="15" stroke="#EEEAE2" stroke-width="5"/><path d="M222 70 v62 M222 132 l-18 60 M222 132 l18 60 M222 86 l-26 26 l20 -30 M222 86 l26 26 l-20 -30" stroke="#EEEAE2" stroke-width="5"/></svg>' },
   { h: 'It counts. It watches.', p: 'Every rep counted out loud. Half reps don\'t count. A lagging side gets called out the moment it shows up.',
     art: '<svg viewBox="0 0 300 220"><text x="20" y="190" fill="#EEEAE2" font-family="Big Shoulders Display, sans-serif" font-weight="900" font-size="210">7</text><g fill="#A9AFB6"><rect x="170" y="120" width="16" height="70" rx="3"/><rect x="194" y="118" width="16" height="72" rx="3"/><rect x="218" y="124" width="16" height="66" rx="3"/><rect x="242" y="142" width="16" height="48" rx="3" fill="#F2C230"/><rect x="266" y="160" width="16" height="30" rx="3" fill="#E0393E"/></g></svg>' },
-  { h: 'It knows when you\'re slowing.', p: 'GymOS times how fast the weight moves up. When the bar slows, you\'re close to your limit, and it tells you. That\'s what a good spotter does.',
+  { h: 'It knows when you\'re slowing.', p: 'Spotter times how fast the weight moves up. When the bar slows, you\'re close to your limit, and it tells you. That\'s what a good spotter does.',
     art: '<svg viewBox="0 0 300 220" fill="none" stroke-linecap="round"><path d="M20 60 C 90 62, 150 70, 190 100 S 260 170, 284 190" stroke="#EEEAE2" stroke-width="6"/><circle cx="190" cy="100" r="9" fill="#F2C230"/><circle cx="262" cy="172" r="9" fill="#E0393E"/><text x="20" y="40" fill="#A9AFB6" font-family="Archivo, sans-serif" font-size="18">bar speed</text><text x="196" y="88" fill="#F2C230" font-family="Archivo, sans-serif" font-size="17">a couple left</text></svg>' }
 ];
 var obI = 0;
@@ -1512,7 +1513,7 @@ function boot() {
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {});
 }
 // Test hooks: tests/ui.test.mjs feeds simulated poses through the real camera path
-window.GymOS = { W: W, DB: DB, show: show, startDemoWorkout: startDemoWorkout, feed: function (f) { processFrame(f); } };
+window.Spotter = { W: W, DB: DB, show: show, startDemoWorkout: startDemoWorkout, feed: function (f) { processFrame(f); } };
 boot();
 })();
 </script>

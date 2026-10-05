@@ -1,4 +1,4 @@
-// GymOS engine tests — simulated lifters, no camera needed.
+// Sentinel Spotter engine tests — simulated lifters, no camera needed.
 // Run: node tests/engine.test.js
 'use strict';
 const G = require('../engine.js');

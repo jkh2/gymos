@@ -19,7 +19,7 @@ const log = [];
 for (const t of [3000, 9000, 16000, 26000, 33000]) {
   await page.waitForTimeout(t - (log.length ? log[log.length-1] : 0));
   log.push(t);
-  const state = await page.evaluate(() => ({ mode: GymOS.W.mode, screen: document.querySelector('.screen.active').id, count: document.getElementById('count').textContent, cue: document.getElementById('cue').textContent }));
+  const state = await page.evaluate(() => ({ mode: Spotter.W.mode, screen: document.querySelector('.screen.active').id, count: document.getElementById('count').textContent, cue: document.getElementById('cue').textContent }));
   console.log(t, JSON.stringify(state));
   await page.screenshot({ path: shots + `10-demo-${t}.png` });
 }
@@ -38,16 +38,16 @@ await page.click('#qr [data-go="setup"]'); await page.waitForTimeout(200);
 // Real camera path with the fake camera: model must load and the check screen must appear
 await page.click('#start-btn');
 try {
-  await page.waitForFunction(() => GymOS.W.mode === 'check', null, { timeout: 90000 });
+  await page.waitForFunction(() => Spotter.W.mode === 'check', null, { timeout: 90000 });
   await page.waitForTimeout(2500);
-  console.log('camera path OK, mode', await page.evaluate(() => GymOS.W.mode));
+  console.log('camera path OK, mode', await page.evaluate(() => Spotter.W.mode));
 } catch (e) { console.log('camera path FAILED', e.message, await page.evaluate(() => document.getElementById('loading-t').textContent)); }
 await page.screenshot({ path: shots + '40-check.png' });
 await page.click('#live-close'); await page.waitForTimeout(300);
 await page.click('[data-go="home"]').catch(()=>{}); await page.waitForTimeout(200);
-await page.evaluate(() => GymOS.show('settings')); await page.waitForTimeout(300);
+await page.evaluate(() => Spotter.show('settings')); await page.waitForTimeout(300);
 await page.screenshot({ path: shots + '50-settings.png' });
-await page.evaluate(() => GymOS.show('history')); await page.waitForTimeout(300);
+await page.evaluate(() => Spotter.show('history')); await page.waitForTimeout(300);
 await page.screenshot({ path: shots + '51-history.png' });
 console.log('ERRORS:', errors.length ? errors.join('\n') : 'none');
 await browser.close();
