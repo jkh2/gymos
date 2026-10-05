@@ -1,227 +1,130 @@
 # GymOS
 
-**Camera-based gym spotter. Counts your reps, tracks bilateral asymmetry, and calls out your form — so you can zone out and lift.**
+**Your phone is your spotter.** Prop it up, lift, and GymOS counts every rep out loud, catches a lagging side, and tells you when the bar is slowing down, so you can stop counting and focus on the muscle.
 
-**[Try it now →](https://jkh2.github.io/gymos)**
+**[Open GymOS →](https://jameskeithharwood.com/gymos/)** · free · runs in the browser · no account · [watch the 40-second demo](https://jameskeithharwood.com/gymos/?demo)
 
----
-
-## What this is
-
-GymOS is a single-file web app that turns your phone into a spotter.
-
-You prop your phone against your water bottle, scan a QR code on the machine, and lift. The camera watches you. It counts your reps out loud. It tracks whether your left arm is keeping up with your right. If your form breaks down or your velocity drops — signs of muscle failure — it tells you. When the set is done, it tells you to rest, counts down your rest timer, and tells you when to go again.
-
-You never touch the screen during a set. You never count in your head. You just lift.
-
-Every exercise app has videos showing you how to do a movement. None of them watch you do it and say *"hey, your left arm isn't coming up as high as your right — fix that."* None of them count for you automatically so your mind can disengage and actually focus on the muscle. GymOS does both.
+<p>
+<img src="docs/live.png" width="200" alt="Live set: giant rep count, speed bars turning yellow and red as the lifter slows, and a 'Grinding. Last rep.' alert">
+<img src="docs/summary.png" width="200" alt="Workout summary with speed rep by rep, notes, and next session's weight">
+<img src="docs/home.png" width="200" alt="Exercise list grouped by muscle, with last session shown">
+<img src="docs/qr.png" width="200" alt="Printable machine QR code card">
+</p>
 
 ---
 
-## What problem it solves
+## Why it exists
 
-When you lift with a training partner, something changes. You stop counting. You stop monitoring yourself. You zone out and just move the weight. That mental offloading is not a comfort feature — it produces better muscle activation. Internal focus (thinking about the muscle contracting) outperforms external focus (counting, watching the clock, monitoring form in a mirror) by a measurable margin.
+When you lift with a training partner, something changes. You stop counting. You stop monitoring yourself. You zone out and just move the weight. That mental offloading isn't a comfort feature. Focusing on the muscle beats focusing on counting, the clock, or the mirror.
 
-Every existing app makes you *more* engaged with your screen during a set. GymOS makes you *less* engaged. The screen goes to your peripheral vision. The voice handles everything. Including the commands — you never have to touch the phone at all.
+Every other fitness app pulls you *into* your screen during a set. GymOS pushes the screen into your peripheral vision. The voice handles everything, including the commands, so you never have to touch the phone.
 
----
+GymOS began as an answer to a friend who was tired of workout apps that need your attention mid-set.
 
-## How it works
+## What it does
 
-- **Select your exercise** from the start screen. The app loads the correct joint tracking, rep angles, and form rules automatically.
-- **Prop your phone** using the camera position hint shown for each exercise — front view for curls and presses, side view for squats and deadlifts.
-- **Lift.** The app tracks both sides independently using on-device pose detection (MediaPipe). No cloud. No latency. Your data stays on your device.
-- **Voice calls each rep** the moment you return to the bottom position — confirming full range of motion was completed. No half-rep credit.
-- **Bilateral asymmetry** is tracked continuously. If your left arm peaks 15% lower than your right across recent reps, the app says "left arm lagging." Not a video tip. Your body, right now, this set.
-- **Velocity failure detection** builds a baseline from your first three reps and watches for slowdown. If your reps start taking 30% longer than your baseline, it tells you to consider ending the set.
-- **Cadence tones** guide your tempo through earbuds — a high tone to start the lift, a mid tone to hold, a low tone to lower. Three tones per rep. Nothing else.
-- **Voice commands** let you control the entire session hands-free. Say "next set," the app confirms "Ending set," then executes.
-- **Rest timer** counts down automatically between sets, speaks the last three seconds, and cues "Go" when it's time.
-- **Session summary** shows total reps, average asymmetry, failure alerts, and what weight to use next session.
-
----
+| | |
+|---|---|
+| **Counts every rep out loud** | A rep only counts when you get back to where you started after reaching full range. Half reps are flagged as partials and not counted. On squats and bench, the rep counts when you stand or lock out, so a rep you get stuck on is never counted. |
+| **Tells you when you're slowing down** | GymOS times the lifting part of every rep. When it slows by 30% from your best rep, you hear *"Slowing down. A couple left."* At 45%: *"Grinding. Last rep."* Speed loss is a standard fatigue signal in strength training. |
+| **Calls out a lagging side** | Facing the camera, it tracks both arms separately and tells you *"Left arm is lagging"* when one side falls short. |
+| **Catches stalls** | If the weight stops moving mid-rep you hear *"Drive!"* If it stays stuck: *"Rack it. Safety first."* |
+| **Learns how you move** | Two slow warm-up reps teach GymOS your personal range of motion and your camera angle, instead of guessing from fixed angles. |
+| **Coaches tempo** | Drop the weight too fast twice in a row and it says *"Control the way down."* |
+| **Runs the whole session** | Ends the set when you rest or step away, runs the rest timer, counts you into the next set. |
+| **Hands-free** | Say "end set", "pause", "resume", "skip", "more time", "end workout". GymOS ignores its own voice so it never triggers itself. |
+| **Remembers and progresses** | History is saved on your phone. The next session's weight is recommended from how your last one went: every set hit with speed to spare means go up, a grind means repeat, two rough sessions mean back off. |
+| **Machine QR codes** | Make a printable QR code for any machine. Scanning it opens GymOS with that exercise and plan ready to go. |
+| **Shareable results** | One tap makes a branded image of your workout's speed chart for social media. |
+| **Installs like an app, works offline** | Add it to your home screen. After the first visit, it works with no signal. |
 
 ## Exercise library
 
-| Exercise | Movement | Joints tracked | Camera position |
-|---|---|---|---|
-| Dumbbell Curl | Flexion | Shoulder → Elbow → Wrist | Face camera |
-| Shoulder Press | Extension | Shoulder → Elbow → Wrist | Face camera |
-| Bench Press | Extension | Shoulder → Elbow → Wrist | Side view |
-| Incline Press | Extension | Shoulder → Elbow → Wrist | Side view |
-| Squat | Extension | Hip → Knee → Ankle | Side view |
-| Deadlift | Extension | Shoulder → Hip → Knee | Side view |
-| Pec Fly | Flexion | Hip → Shoulder → Wrist | Side view · limited accuracy |
+16 exercises. Each one is a schema entry in [`engine.js`](engine.js). The engine has no per-exercise code.
 
-The engine handles both flexion (angle decreases toward peak) and extension (angle increases toward peak) movements correctly. Bilateral asymmetry comparison, peak tracking, and phase bar direction all branch on movement type automatically. Adding a new exercise is a matter of defining its schema object — no engine changes required.
+| Face the camera | Side-on to the camera |
+|---|---|
+| Dumbbell curl · Hammer curl · Shoulder press · Lateral raise · Lat pulldown · Pec deck fly | Bench press · Incline press · Push-up · Squat · Deadlift · Romanian deadlift · Seated cable row · Tricep pushdown · Leg extension · Seated leg curl |
 
----
+Side-on exercises track whichever side faces the camera. Facing-camera exercises track both sides and measure the gap between them. The pec deck fly is tracked by the distance between your hands relative to your shoulder width. That fixes the old version's blind spot for that movement.
 
-## Voice commands
+## How it works
 
-GymOS listens continuously during your session. Commands are context-aware — rest commands won't fire mid-set and vice versa. Every command is confirmed out loud before it executes.
-
-| Say | When | Result |
-|---|---|---|
-| "next set" / "set done" / "done" / "end set" | Lifting | Ends set, starts rest timer |
-| "skip rest" / "go" / "next" | Resting | Skips rest, starts next set |
-| "pause" / "stop" | Lifting | Freezes rep detection and cadence |
-| "resume" / "continue" | Paused | Resumes session and cadence |
-| "failure" / "muscle failure" | Lifting | Logs failure, alerts on screen |
-| "end session" / "finish session" | Lifting or resting | Goes to session summary |
-
-The mic indicator sits in the lower left of the camera view. It pulses green when listening, amber when a command was heard.
-
-> **Browser note:** Chrome on Android is the most reliable for both camera and voice recognition. Safari on iOS works but may require re-granting microphone permissions between sessions. Firefox does not support the Web Speech API.
-
----
-
-## Tech stack
-
-- Vanilla HTML/CSS/JS — single file, no build step, no dependencies to install
-- [MediaPipe Pose](https://google.github.io/mediapipe/solutions/pose) — on-device skeleton tracking, 33 landmarks at ~30fps
-- Web Speech API (SpeechSynthesis + SpeechRecognition) — voice output and voice commands
-- Web Audio API — cadence tones, no external audio files
-- GitHub Pages — deploy directly, no server required
-
----
-
-## Current build status
-
-### Done — v4
-
-- [x] Schema-driven exercise engine — exercises defined as config objects, not hardcoded logic
-- [x] `movement_type` field — engine handles both flexion and extension movements correctly
-- [x] Landmark alias map — human-readable joint names resolve to MediaPipe indices internally
-- [x] Bilateral tracking — both sides tracked independently every frame, peak comparison correct for both movement types
-- [x] Rep detection on descend — rep counts when you return to bottom, confirming full range completed
-- [x] Velocity failure detection — baseline from first 3 reps, alerts on 30%+ slowdown
-- [x] Bilateral asymmetry detection — lagging side identified and spoken
-- [x] Form rule engine — stackable typed rules per exercise (`bilateral_peak_diff`, `angle_floor`, `angle_ceiling`)
-- [x] Squat depth check — `angle_ceiling` rule fires during descent, not after
-- [x] Voice rep counting — each rep spoken, no screen interaction required
-- [x] Voice command engine — continuous listening, context-aware, confirms before executing
-- [x] Cadence tone engine — three-phase audio guide (UP / HOLD / DOWN), tone gate prevents stacking
-- [x] Cadence per exercise — hold phase skipped automatically for exercises that don't use it
-- [x] Exercise selector — start screen grid, tap to select, weight auto-fills to exercise default
-- [x] Camera position hint — displayed on live view per exercise
-- [x] Set and rest management — rest timer with spoken countdown, auto-advance
-- [x] Progression logic — session summary calculates next session weight
-- [x] Session summary screen — total reps, avg asymmetry, failure alerts, next weight
-- [x] Proprietary license — all rights reserved, prior art on record
-- [x] Single HTML file — deployable to GitHub Pages with no build step
-
-**Exercise library:** Dumbbell Curl, Shoulder Press, Bench Press, Incline Press, Squat, Deadlift, Pec Fly
-
----
-
-## Roadmap to completion
-
-### Phase 3 — QR + URL parameter loading ← next
-Each machine gets a QR code that encodes the exercise and program parameters as URL query strings:
 ```
-gymos.app/?exercise=squat&weight=135&reps=5&sets=4
+camera → MediaPipe Pose Landmarker (on-device, GPU) → 3D joint positions
+       → joint angle or hand span, smoothed (One Euro filter)
+       → progress through YOUR calibrated range, from 0 to 1
+       → rep state machine: start → out → full range → back to start = rep
+       → per rep: speed of the lifting phase, side gap, lowering tempo
+       → coaching cues through a priority voice queue (safety > count > cue)
 ```
-App reads parameters on load, skips the setup screen, goes straight to that exercise. Gym puts the QR on the machine stand. User scans, their program is pre-loaded. This is the feature that makes the gym partnership model work.
 
-### Phase 4 — Local memory
-`localStorage` stores your last session per exercise: weight, reps completed, asymmetry log. Next time you scan that machine's QR, the app already knows what you did. Progressive overload logic fires automatically — hit your target, next session bumps the weight by the configured increment. No manual entry. No app account required.
+* **3D world landmarks** rather than flat image coordinates, so angles hold up when a limb moves toward the camera.
+* **Speed is measured on the lifting phase only**, between 20% and 80% of your range, so pauses and slow lowering never look like fatigue. In face-on exercises it's timed on the leading arm, so a lagging arm shows up as asymmetry, not fatigue.
+* **The engine is pure JavaScript with no DOM.** It runs in Node, where 27 tests drive simulated lifters through it.
 
-### Phase 5 — Additional exercises
-The schema is ready. Priority additions based on real user needs: lat pulldown, seated cable row, Romanian deadlift, tricep pushdown, hammer curl, lateral raise. Each is a schema entry — no engine changes needed.
+## Privacy
 
-### Phase 6 — Program layer
-A workout program is an ordered list of exercises, sets, reps, and rest periods. Load it once. The app routes you machine to machine through your full session. "Next: Bench Press." Supports any split structure expressible as an ordered list.
+Your camera feed is processed on your phone and is never recorded or uploaded. History lives in your browser's storage on that device. There's no account and no server.
 
-### Phase 7 — Gym integration
-- QR stand hardware spec — standardized phone mount for machine attachment
-- Gym admin dashboard — aggregate anonymized usage per machine
-- Per-machine licensing model
-- Onboarding flow for gym staff
+One honest caveat: voice commands use your browser's built-in speech recognition, and some browsers (Chrome, for example) process that audio on their own servers. Turn voice commands off in Settings to keep everything on the phone. Spoken coaching (the app talking to you) is always local.
 
-### Phase 8 — Backend and multi-device sync
-- Supabase backend — user accounts, session history, program assignment
-- History sync across devices
-- Coach/trainer accounts — assign programs to clients, view session data
-- Export to common fitness formats (CSV, Apple Health, Google Fit)
+## Safety
 
----
+GymOS is not a substitute for a human spotter or safety bars on heavy barbell lifts. Its stall alert tells you to rack the weight. It cannot catch it.
 
-## Running it
+## Running and testing
 
-No installation. No build step.
+There's no build step. It's a static site: `index.html`, `engine.js`, `sw.js`, `manifest.json`, `icons/`.
 
-1. Download `index.html`
-2. Open in Chrome on Android or Safari on iOS
-3. Allow camera and microphone access when prompted
-4. Select your exercise on the start screen
-5. Note the camera position hint — face camera or side view depending on the exercise
-6. Prop your phone accordingly and lift
+```bash
+python3 -m http.server 8765          # serve locally, then open http://localhost:8765
+node tests/engine.test.js            # 27 engine tests with simulated lifters, no camera
+npm i playwright && npx playwright install chromium
+node tests/ui-walkthrough.mjs        # clicks through every screen with a fake camera, runs the demo
+node tests/ui-flow.mjs               # full workout through the real camera path with simulated poses
+```
 
-Or deploy to GitHub Pages:
-
-1. Fork this repo
-2. Go to Settings → Pages
-3. Set source to main branch, root folder
-4. Your app is live at `yourusername.github.io/gymos`
-
----
+The camera needs HTTPS (or localhost). GitHub Pages serves it over HTTPS.
 
 ## Camera setup tips
 
-- Portrait orientation is easier to prop than landscape
-- 3–8 feet of distance from the camera
-- Good lighting matters — the pose model struggles in low light
-- For face-camera exercises (curl, shoulder press): stand straight on to the camera
-- For side-view exercises (squat, deadlift, bench, pec fly): position the camera perpendicular to your movement plane so the full joint arc is visible
-- A water bottle, gym bag, or any stable object works as a stand
-- Pec fly tracking is limited — the movement happens in the transverse plane which a single phone camera cannot capture accurately. Rep counting may work but bilateral asymmetry readouts will be unreliable. Machine fly or cable fly tracks better.
----
+* 6–8 feet away, phone propped at about hip height. A water bottle, gym bag or bench works.
+* Face-on exercises: both arms fully in frame. Side-on exercises: the joints listed on the setup screen.
+* Good light helps. The position check turns each joint chip green when GymOS can see it.
+* The **Accurate** tracking setting is better for side-on lifts and uses more battery.
 
-## Contributing
+## Roadmap
 
-The exercise schema is designed to be extended. To add a new exercise:
+- [x] Rep counting that requires full range, returns to start, and works side-on (v5)
+- [x] Calibration, speed-loss fatigue alerts, stall alerts, tempo coaching (v5)
+- [x] QR and URL loading, saved history, progression, offline, installable (v5)
+- [ ] **Workout programs:** an ordered list of exercises that routes you machine to machine
+- [ ] **Rep-in-reserve estimate**, learned per user from their own speed-loss history
+- [ ] **Bar path view** for squat, bench and deadlift
+- [ ] **Gym partner kit:** standard phone mount spec, QR stands, anonymized per-machine usage
+- [ ] **Optional sync:** accounts, multiple devices, coach and client sharing, Apple Health and Google Fit export
 
-1. Add any new landmark aliases to `LANDMARKS` if joints beyond the current set are needed
-2. Determine `movement_type` — flexion if angle decreases toward peak, extension if it increases
-3. Define the exercise config object in `EXERCISES` following the existing schema
-4. Add appropriate `form_rules` — `bilateral_peak_diff` for asymmetry, `angle_floor` for extension checks, `angle_ceiling` for depth checks
-5. Test rep detection by confirming the angle range on yourself before committing
+## Version history
 
-Pull requests for new exercises, new form rule types, and camera setup improvements are welcome.
-
----
-
-## Architecture note
-
-GymOS runs entirely on-device. MediaPipe Pose inference happens locally in the browser — no video is transmitted anywhere. Voice recognition runs through the browser's Web Speech API, which on most platforms also processes locally. No account is required. No data leaves the device until Phase 8 (opt-in backend sync).
-
-This is intentional. A gym is a place people go to focus. The last thing the app should do is add network latency, login friction, or surveillance overhead to that experience.
-
----
+`legacy/` keeps the earlier builds for reference. v3 was the voice command engine. v4 added the seven-exercise schema.
 
 ## Built by
 
 James Keith Harwood II
-Sentinel AI Systems — Antonito, Colorado
+Sentinel AI Systems, Antonito, Colorado
 [jameskeithharwood.com](https://www.jameskeithharwood.com)
 
----
+Built in partnership with Claude (Anthropic).
 
 ## License
 
-Copyright (c) 2026 James Keith Harwood II — Sentinel AI Systems. All Rights Reserved.
+Copyright (c) 2026 James Keith Harwood II, Sentinel AI Systems. All Rights Reserved.
 
-This software may not be copied, modified, distributed, or used in any commercial
-setting without express written permission from the copyright holder. Viewing and
-personal evaluation are permitted.
+This software may not be copied, modified, distributed, or used in any commercial setting without express written permission from the copyright holder. Viewing and personal evaluation are permitted.
 
-The concepts embodied in this software — including camera-based bilateral asymmetry
-detection during strength training, schema-driven exercise configuration, on-device
-rep counting via pose estimation, voice-commanded gym sessions, and QR-code-driven
-workout delivery to gym machines — constitute documented prior art originating with
-James Keith Harwood II, established through timestamped development records in 2026.
+The concepts embodied in this software constitute documented prior art originating with James Keith Harwood II, established through timestamped development records in 2026. They include camera-based bilateral asymmetry detection during strength training, schema-driven exercise configuration, on-device rep counting via pose estimation, voice-commanded gym sessions, and QR-code-driven workout delivery to gym machines.
 
-For commercial licensing and partnership inquiries: [jameskeithharwood.com](https://www.jameskeithharwood.com)
+For commercial licensing and partnership inquiries: [jameskeithharwood.com](https://www.jameskeithharwood.com). Collaboration is by arrangement.
 
-See [LICENSE](./LICENSE) for full terms.
+See [license.md](./license.md) for full terms.
