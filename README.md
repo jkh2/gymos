@@ -107,7 +107,13 @@ The camera needs HTTPS (or localhost). GitHub Pages serves it over HTTPS.
 
 ## Version history
 
-`legacy/` keeps the earlier builds for reference. v3 was the voice command engine. v4 added the seven-exercise schema.
+| Version | What it was | Try it |
+|---|---|---|
+| **v5** (Oct 2026) | Phone spotter rebuild: speed-loss fatigue alerts, calibration, 16 exercises, history, QR codes, offline | [current](https://jameskeithharwood.com/gymos/) |
+| v4 (May 2026) | Seven-exercise schema, flexion/extension movement types, exercise picker | [archived](https://jameskeithharwood.com/gymos/legacy/v4.html) |
+| v3 (May 2026) | First MVP: curl rep counting, voice commands, rest timer | [archived](https://jameskeithharwood.com/gymos/legacy/v3.html) |
+
+The archived builds live in [`legacy/`](legacy/) and are kept as they were, apart from a banner pointing to the current version.
 
 ## Built by
 
